@@ -1,29 +1,119 @@
 import { base44 } from "@/api/base44Client";
 
+// ─── Core HTTP wrapper ────────────────────────────────────────────────────────
 export async function unifiCall(method, path, body = null) {
   const response = await base44.functions.invoke("unifiProxy", { method, path, body });
   return response.data;
 }
 
-export async function getSites() {
-  return unifiCall("GET", "/v1/sites");
-}
+// ─── Site Manager API ─────────────────────────────────────────────────────────
 
-export async function getSiteDevices(siteId) {
-  return unifiCall("GET", `/v1/sites/${siteId}/devices`);
-}
-
-export async function getSiteClients(siteId) {
-  return unifiCall("GET", `/v1/sites/${siteId}/clients`);
-}
-
+/** List all hosts associated with the account */
 export async function getHosts() {
   return unifiCall("GET", "/v1/hosts");
 }
 
+/** Get a specific host by ID */
 export async function getHost(hostId) {
   return unifiCall("GET", `/v1/hosts/${hostId}`);
 }
+
+/** List all sites */
+export async function getSites() {
+  return unifiCall("GET", "/v1/sites");
+}
+
+/**
+ * List all devices (global, across hosts).
+ * @param {string[]} [hostIds] - optional array of host IDs to filter
+ */
+export async function getDevices(hostIds = []) {
+  const qs = hostIds.map(id => `hostIds[]=${encodeURIComponent(id)}`).join("&");
+  const path = qs ? `/v1/devices?${qs}` : "/v1/devices";
+  return unifiCall("GET", path);
+}
+
+/**
+ * Get ISP metrics.
+ * @param {"5m"|"1h"} type - interval type
+ * @param {object} [params] - optional query params: beginTimestamp, endTimestamp, duration
+ */
+export async function getIspMetrics(type = "5m", params = {}) {
+  const qs = Object.entries(params)
+    .filter(([, v]) => v != null)
+    .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+    .join("&");
+  const path = qs ? `/v1/isp-metrics/${type}?${qs}` : `/v1/isp-metrics/${type}`;
+  return unifiCall("GET", path);
+}
+
+/**
+ * Query ISP metrics for specific sites.
+ * @param {"5m"|"1h"} type - interval type
+ * @param {Array} sites - array of site query objects
+ */
+export async function queryIspMetrics(type = "1h", sites = []) {
+  return unifiCall("POST", `/v1/isp-metrics/${type}/query`, { sites });
+}
+
+// ─── Network API (via Connector Proxy) ───────────────────────────────────────
+// These proxy through: GET /v1/connector/consoles/{hostId}/network/integration/v1/...
+
+function connectorPath(hostId, networkPath) {
+  return `/v1/connector/consoles/${hostId}/network/integration/v1/${networkPath}`;
+}
+
+/** List Network API sites on a host */
+export async function getNetworkSites(hostId) {
+  return unifiCall("GET", connectorPath(hostId, "sites"));
+}
+
+/** List devices on a site via Network API */
+export async function getSiteDevices(hostId, siteId) {
+  return unifiCall("GET", connectorPath(hostId, `sites/${siteId}/devices`));
+}
+
+/** List clients on a site via Network API */
+export async function getSiteClients(hostId, siteId) {
+  return unifiCall("GET", connectorPath(hostId, `sites/${siteId}/clients`));
+}
+
+/** List networks (LANs/VLANs) on a site via Network API */
+export async function getSiteNetworks(hostId, siteId) {
+  return unifiCall("GET", connectorPath(hostId, `sites/${siteId}/networks`));
+}
+
+/** List WiFi networks on a site via Network API */
+export async function getSiteWlans(hostId, siteId) {
+  return unifiCall("GET", connectorPath(hostId, `sites/${siteId}/wlans`));
+}
+
+/** List firewall rules on a site via Network API */
+export async function getSiteFirewallRules(hostId, siteId) {
+  return unifiCall("GET", connectorPath(hostId, `sites/${siteId}/firewall/rules`));
+}
+
+/** List port forwarding rules on a site via Network API */
+export async function getSitePortForwarding(hostId, siteId) {
+  return unifiCall("GET", connectorPath(hostId, `sites/${siteId}/port-forwarding`));
+}
+
+/** List traffic routes on a site via Network API */
+export async function getSiteTrafficRoutes(hostId, siteId) {
+  return unifiCall("GET", connectorPath(hostId, `sites/${siteId}/traffic-routes`));
+}
+
+/** List alarms on a site via Network API */
+export async function getSiteAlarms(hostId, siteId) {
+  return unifiCall("GET", connectorPath(hostId, `sites/${siteId}/alarms`));
+}
+
+/** List events on a site via Network API */
+export async function getSiteEvents(hostId, siteId) {
+  return unifiCall("GET", connectorPath(hostId, `sites/${siteId}/events`));
+}
+
+// ─── Formatting helpers ───────────────────────────────────────────────────────
 
 export function getDeviceStatusColor(state) {
   if (!state) return "text-gray-400";

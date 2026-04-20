@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNetwork } from "@/components/layout/AppLayout";
-import { unifiCall } from "@/lib/unifi";
+import { getSiteAlarms, getSiteEvents, getSiteDevices, getSiteClients, getIspMetrics } from "@/lib/unifi";
 import ChatPanel from "@/components/chat/ChatPanel";
 import { MessageSquare } from "lucide-react";
 
@@ -15,9 +15,31 @@ export default function Chat() {
 
   const loadContext = async () => {
     setLoadingContext(true);
+    const hostId = selectedSite.hostId;
+    const siteId = selectedSite.id;
+
+    // Fetch enriched context in parallel; gracefully skip failures
+    const safeCall = (fn) => fn.catch(() => null);
+
+    const [alarms, events, devices, clients, ispMetrics] = await Promise.all([
+      hostId && siteId ? safeCall(() => getSiteAlarms(hostId, siteId)) : null,
+      hostId && siteId ? safeCall(() => getSiteEvents(hostId, siteId)) : null,
+      hostId && siteId ? safeCall(() => getSiteDevices(hostId, siteId)) : null,
+      hostId && siteId ? safeCall(() => getSiteClients(hostId, siteId)) : null,
+      safeCall(() => getIspMetrics("5m", { duration: "24h" })),
+    ]);
+
+    const extract = (r) =>
+      Array.isArray(r?.data?.data) ? r.data.data : Array.isArray(r?.data) ? r.data : [];
+
     setContextData({
       site: selectedSite,
       statistics: selectedSite.statistics,
+      alarms: extract(alarms),
+      events: extract(events).slice(0, 50),
+      devices: extract(devices),
+      clients: extract(clients),
+      ispMetrics: extract(ispMetrics),
       loadedAt: new Date().toISOString(),
     });
     setLoadingContext(false);
@@ -35,7 +57,7 @@ export default function Chat() {
             {loadingContext
               ? "Loading network context..."
               : contextData
-              ? `Context loaded: ${contextData.statistics?.counts?.totalDevice || 0} devices, ${(contextData.statistics?.counts?.wifiClient || 0) + (contextData.statistics?.counts?.wiredClient || 0)} clients`
+              ? `Context loaded: ${contextData.devices?.length || contextData.statistics?.counts?.totalDevice || 0} devices · ${contextData.clients?.length || (contextData.statistics?.counts?.wifiClient || 0) + (contextData.statistics?.counts?.wiredClient || 0)} clients · ${contextData.alarms?.length || 0} alarms`
               : "No site selected"}
           </p>
         </div>
