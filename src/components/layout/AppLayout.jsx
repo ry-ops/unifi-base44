@@ -1,7 +1,7 @@
 import React, { useState, useEffect, createContext, useContext } from "react";
 import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
-import { getSites } from "@/lib/unifi";
+import { getSites, getNetworkSites } from "@/lib/unifi";
 import { RefreshCw } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -26,8 +26,29 @@ export default function AppLayout() {
       if (siteList.length > 0) {
         // Normalize: API returns siteId, map to id for consistency
         const normalized = siteList.map(s => ({ ...s, id: s.siteId || s.id, hostId: s.hostId, name: s.meta?.desc || s.meta?.name || s.siteId }));
-        setSites(normalized);
-        if (!selectedSite) setSelectedSite(normalized[0]);
+
+        // Resolve Network API UUID siteId per host (needed for Network API sub-resource calls)
+        const hostIds = [...new Set(normalized.map(s => s.hostId).filter(Boolean))];
+        const networkSiteMaps = await Promise.all(
+          hostIds.map(async hostId => {
+            const r = await getNetworkSites(hostId).catch(() => null);
+            const list = Array.isArray(r?.data?.data) ? r.data.data : [];
+            return { hostId, list };
+          })
+        );
+        // Build lookup: hostId + internalReference -> network siteId (UUID)
+        const lookup = {};
+        networkSiteMaps.forEach(({ hostId, list }) => {
+          list.forEach(ns => { lookup[`${hostId}::${ns.internalReference}`] = ns.id; });
+        });
+        // Attach networkSiteId to each site
+        const enriched = normalized.map(s => ({
+          ...s,
+          networkSiteId: lookup[`${s.hostId}::${s.meta?.name}`] || null,
+        }));
+
+        setSites(enriched);
+        if (!selectedSite) setSelectedSite(enriched[0]);
       } else {
         setError("No sites found. Check your API key permissions.");
       }

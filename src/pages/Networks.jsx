@@ -33,10 +33,10 @@ export default function Networks() {
     setError(null);
     const safe = fn => fn.catch(() => null);
     const [n, w, pf, tr] = await Promise.all([
-      safe(() => getSiteNetworks(selectedSite.hostId, selectedSite.id)),
-      safe(() => getSiteWlans(selectedSite.hostId, selectedSite.id)),
-      safe(() => getSitePortForwarding(selectedSite.hostId, selectedSite.id)),
-      safe(() => getSiteTrafficRoutes(selectedSite.hostId, selectedSite.id)),
+      safe(() => getSiteNetworks(selectedSite.hostId, selectedSite.networkSiteId || selectedSite.id)),
+      safe(() => getSiteWlans(selectedSite.hostId, selectedSite.networkSiteId || selectedSite.id)),
+      safe(() => getSitePortForwarding(selectedSite.hostId, selectedSite.networkSiteId || selectedSite.id)),
+      safe(() => getSiteTrafficRoutes(selectedSite.hostId, selectedSite.networkSiteId || selectedSite.id)),
     ]);
     const extract = r => Array.isArray(r?.data?.data) ? r.data.data : Array.isArray(r?.data) ? r.data : [];
     setNetworks(extract(n));

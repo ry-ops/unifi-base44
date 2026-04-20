@@ -24,8 +24,8 @@ export default function Security() {
     setLoading(true);
     const safe = fn => fn.catch(() => null);
     const [a, fr] = await Promise.all([
-      safe(() => getSiteAlarms(selectedSite.hostId, selectedSite.id)),
-      safe(() => getSiteFirewallRules(selectedSite.hostId, selectedSite.id)),
+      safe(() => getSiteAlarms(selectedSite.hostId, selectedSite.networkSiteId || selectedSite.id)),
+      safe(() => getSiteFirewallRules(selectedSite.hostId, selectedSite.networkSiteId || selectedSite.id)),
     ]);
     const extract = r => Array.isArray(r?.data?.data) ? r.data.data : Array.isArray(r?.data) ? r.data : [];
     setAlarms(extract(a));

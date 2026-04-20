@@ -35,7 +35,7 @@ export default function Devices() {
     setLoading(true);
     setError(null);
     setSelected(null);
-    const result = await getSiteDevices(selectedSite.hostId, selectedSite.id).catch(e => { setError(e?.message || "Failed"); return null; });
+    const result = await getSiteDevices(selectedSite.hostId, selectedSite.networkSiteId || selectedSite.id).catch(e => { setError(e?.message || "Failed"); return null; });
     const list = Array.isArray(result?.data?.data) ? result.data.data
       : Array.isArray(result?.data) ? result.data : [];
     setDevices(list);

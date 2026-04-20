@@ -24,7 +24,7 @@ export default function Clients() {
   const load = async () => {
     setLoading(true);
     setError(null);
-    const result = await getSiteClients(selectedSite.hostId, selectedSite.id).catch(e => { setError(e?.message || "Failed"); return null; });
+    const result = await getSiteClients(selectedSite.hostId, selectedSite.networkSiteId || selectedSite.id).catch(e => { setError(e?.message || "Failed"); return null; });
     const list = Array.isArray(result?.data?.data) ? result.data.data
       : Array.isArray(result?.data) ? result.data : [];
     setClients(list);
