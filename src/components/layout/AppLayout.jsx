@@ -3,11 +3,13 @@ import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import { getSites } from "@/lib/unifi";
 import { RefreshCw } from "lucide-react";
+import { useAuth } from "@/lib/AuthContext";
 
 const NetworkContext = createContext(null);
 export const useNetwork = () => useContext(NetworkContext);
 
 export default function AppLayout() {
+  const { isAuthenticated, isLoadingAuth } = useAuth();
   const [sites, setSites] = useState([]);
   const [selectedSite, setSelectedSite] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -17,20 +19,20 @@ export default function AppLayout() {
   const loadSites = async () => {
     setLoading(true);
     setError(null);
-    const result = await getSites();
-    if (result?.data?.data) {
-      const siteList = result.data.data;
-      setSites(siteList);
-      if (!selectedSite && siteList.length > 0) {
-        setSelectedSite(siteList[0]);
+    try {
+      const result = await getSites();
+      // unifiCall returns response.data = { status, ok, data: { data: [...] } }
+      const siteList = Array.isArray(result?.data?.data) ? result.data.data : [];
+      if (siteList.length > 0) {
+        // Normalize: API returns siteId, map to id for consistency
+        const normalized = siteList.map(s => ({ ...s, id: s.siteId || s.id, name: s.meta?.desc || s.meta?.name || s.siteId }));
+        setSites(normalized);
+        if (!selectedSite) setSelectedSite(normalized[0]);
+      } else {
+        setError("No sites found. Check your API key permissions.");
       }
-    } else if (result?.data) {
-      // try flat array
-      const arr = Array.isArray(result.data) ? result.data : [];
-      setSites(arr);
-      if (!selectedSite && arr.length > 0) setSelectedSite(arr[0]);
-    } else {
-      setError("Could not load sites. Check your API key.");
+    } catch (err) {
+      setError("Failed to connect: " + (err?.message || "Unknown error"));
     }
     setLoading(false);
     setLastRefresh(new Date());

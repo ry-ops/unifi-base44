@@ -20,7 +20,8 @@ async function unifiRequest(method, path, body = null) {
 
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
-  const user = await base44.auth.me();
+  let user = null;
+  try { user = await base44.auth.me(); } catch (_) {}
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
   const { messages, contextData, pendingAction } = await req.json();
