@@ -5,7 +5,7 @@ const API_KEY = Deno.env.get("UNIFI_API_KEY");
 
 async function unifiRequest(method, path, body = null) {
   const headers = {
-    "X-API-KEY": API_KEY,
+    "X-API-Key": API_KEY,
     "Content-Type": "application/json",
     "Accept": "application/json",
   };
