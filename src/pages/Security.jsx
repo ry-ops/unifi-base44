@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNetwork } from "@/components/layout/AppLayout";
-import { getSiteAlarms, getSiteFirewallRules } from "@/lib/unifi";
+import { getSiteAlarms, getSiteFirewallRules, getNetworkSites } from "@/lib/unifi";
 import { ShieldAlert, Shield, Zap, AlertTriangle, CheckCircle, Globe, Clock, RefreshCw, List } from "lucide-react";
 
 function AlarmSeverityBadge({ severity }) {
@@ -22,10 +22,20 @@ export default function Security() {
 
   const load = async () => {
     setLoading(true);
+
+    let networkSiteId = selectedSite.networkSiteId;
+    if (!networkSiteId && selectedSite.hostId) {
+      const nsResult = await getNetworkSites(selectedSite.hostId).catch(() => null);
+      const nsList = Array.isArray(nsResult?.data?.data) ? nsResult.data.data : [];
+      const match = nsList.find(ns => ns.internalReference === selectedSite.meta?.name || nsList.length === 1);
+      networkSiteId = match?.id || null;
+    }
+
     const safe = fn => fn.catch(() => null);
+    const siteId = networkSiteId || selectedSite.id;
     const [a, fr] = await Promise.all([
-      safe(() => getSiteAlarms(selectedSite.hostId, selectedSite.networkSiteId || selectedSite.id)),
-      safe(() => getSiteFirewallRules(selectedSite.hostId, selectedSite.networkSiteId || selectedSite.id)),
+      safe(() => getSiteAlarms(selectedSite.hostId, siteId)),
+      safe(() => getSiteFirewallRules(selectedSite.hostId, siteId)),
     ]);
     const extract = r => Array.isArray(r?.data?.data) ? r.data.data : Array.isArray(r?.data) ? r.data : [];
     setAlarms(extract(a));

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNetwork } from "@/components/layout/AppLayout";
-import { getSiteClients, formatBytes } from "@/lib/unifi";
+import { getSiteClients, getNetworkSites, formatBytes } from "@/lib/unifi";
 import { Users, Wifi, Activity, UserCheck, RefreshCw, Search, Monitor, Smartphone } from "lucide-react";
 
 function connectionIcon(client) {
@@ -24,7 +24,17 @@ export default function Clients() {
   const load = async () => {
     setLoading(true);
     setError(null);
-    const result = await getSiteClients(selectedSite.hostId, selectedSite.networkSiteId || selectedSite.id).catch(e => { setError(e?.message || "Failed"); return null; });
+
+    // Resolve networkSiteId if not already attached
+    let networkSiteId = selectedSite.networkSiteId;
+    if (!networkSiteId && selectedSite.hostId) {
+      const nsResult = await getNetworkSites(selectedSite.hostId).catch(() => null);
+      const nsList = Array.isArray(nsResult?.data?.data) ? nsResult.data.data : [];
+      const match = nsList.find(ns => ns.internalReference === selectedSite.meta?.name || nsList.length === 1);
+      networkSiteId = match?.id || null;
+    }
+
+    const result = await getSiteClients(selectedSite.hostId, networkSiteId || selectedSite.id).catch(e => { setError(e?.message || "Failed"); return null; });
     const list = Array.isArray(result?.data?.data) ? result.data.data
       : Array.isArray(result?.data) ? result.data : [];
     setClients(list);

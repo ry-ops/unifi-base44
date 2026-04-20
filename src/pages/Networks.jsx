@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNetwork } from "@/components/layout/AppLayout";
-import { getSiteNetworks, getSiteWlans, getSitePortForwarding, getSiteTrafficRoutes } from "@/lib/unifi";
+import { getSiteNetworks, getSiteWlans, getSitePortForwarding, getSiteTrafficRoutes, getNetworkSites } from "@/lib/unifi";
 import { Wifi, Globe, Network, Shield, RefreshCw, Lock, Unlock, ArrowRight } from "lucide-react";
 
 function SectionHeader({ label }) {
@@ -31,12 +31,22 @@ export default function Networks() {
   const load = async () => {
     setLoading(true);
     setError(null);
+
+    let networkSiteId = selectedSite.networkSiteId;
+    if (!networkSiteId && selectedSite.hostId) {
+      const nsResult = await getNetworkSites(selectedSite.hostId).catch(() => null);
+      const nsList = Array.isArray(nsResult?.data?.data) ? nsResult.data.data : [];
+      const match = nsList.find(ns => ns.internalReference === selectedSite.meta?.name || nsList.length === 1);
+      networkSiteId = match?.id || null;
+    }
+
     const safe = fn => fn.catch(() => null);
+    const siteId = networkSiteId || selectedSite.id;
     const [n, w, pf, tr] = await Promise.all([
-      safe(() => getSiteNetworks(selectedSite.hostId, selectedSite.networkSiteId || selectedSite.id)),
-      safe(() => getSiteWlans(selectedSite.hostId, selectedSite.networkSiteId || selectedSite.id)),
-      safe(() => getSitePortForwarding(selectedSite.hostId, selectedSite.networkSiteId || selectedSite.id)),
-      safe(() => getSiteTrafficRoutes(selectedSite.hostId, selectedSite.networkSiteId || selectedSite.id)),
+      safe(() => getSiteNetworks(selectedSite.hostId, siteId)),
+      safe(() => getSiteWlans(selectedSite.hostId, siteId)),
+      safe(() => getSitePortForwarding(selectedSite.hostId, siteId)),
+      safe(() => getSiteTrafficRoutes(selectedSite.hostId, siteId)),
     ]);
     const extract = r => Array.isArray(r?.data?.data) ? r.data.data : Array.isArray(r?.data) ? r.data : [];
     setNetworks(extract(n));

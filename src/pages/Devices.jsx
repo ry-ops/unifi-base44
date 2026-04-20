@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNetwork } from "@/components/layout/AppLayout";
-import { getSiteDevices, getDeviceStatusBg, formatUptime } from "@/lib/unifi";
+import { getSiteDevices, getNetworkSites, getDeviceStatusBg, formatUptime } from "@/lib/unifi";
 import { RefreshCw, Server, Wifi, Router, HardDrive, ChevronRight } from "lucide-react";
 
 function deviceIcon(d) {
@@ -35,7 +35,16 @@ export default function Devices() {
     setLoading(true);
     setError(null);
     setSelected(null);
-    const result = await getSiteDevices(selectedSite.hostId, selectedSite.networkSiteId || selectedSite.id).catch(e => { setError(e?.message || "Failed"); return null; });
+
+    let networkSiteId = selectedSite.networkSiteId;
+    if (!networkSiteId && selectedSite.hostId) {
+      const nsResult = await getNetworkSites(selectedSite.hostId).catch(() => null);
+      const nsList = Array.isArray(nsResult?.data?.data) ? nsResult.data.data : [];
+      const match = nsList.find(ns => ns.internalReference === selectedSite.meta?.name || nsList.length === 1);
+      networkSiteId = match?.id || null;
+    }
+
+    const result = await getSiteDevices(selectedSite.hostId, networkSiteId || selectedSite.id).catch(e => { setError(e?.message || "Failed"); return null; });
     const list = Array.isArray(result?.data?.data) ? result.data.data
       : Array.isArray(result?.data) ? result.data : [];
     setDevices(list);
