@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNetwork } from "@/components/layout/AppLayout";
-import { getSiteDevices, getSiteClients, getSiteAlarms } from "@/lib/unifi";
+import { unifiCall } from "@/lib/unifi";
 import ChatPanel from "@/components/chat/ChatPanel";
 import { MessageSquare } from "lucide-react";
 
@@ -15,17 +15,9 @@ export default function Chat() {
 
   const loadContext = async () => {
     setLoadingContext(true);
-    const [devResult, clientResult, alarmResult] = await Promise.all([
-      getSiteDevices(selectedSite.id),
-      getSiteClients(selectedSite.id),
-      getSiteAlarms(selectedSite.id),
-    ]);
-    const extract = (r) => Array.isArray(r?.data?.data) ? r.data.data : Array.isArray(r?.data) ? r.data : [];
     setContextData({
       site: selectedSite,
-      devices: extract(devResult),
-      clients: extract(clientResult),
-      alarms: extract(alarmResult),
+      statistics: selectedSite.statistics,
       loadedAt: new Date().toISOString(),
     });
     setLoadingContext(false);
@@ -43,7 +35,7 @@ export default function Chat() {
             {loadingContext
               ? "Loading network context..."
               : contextData
-              ? `Context loaded: ${contextData.devices?.length || 0} devices, ${contextData.clients?.length || 0} clients`
+              ? `Context loaded: ${contextData.statistics?.counts?.totalDevice || 0} devices, ${(contextData.statistics?.counts?.wifiClient || 0) + (contextData.statistics?.counts?.wiredClient || 0)} clients`
               : "No site selected"}
           </p>
         </div>

@@ -1,126 +1,136 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { useNetwork } from "@/components/layout/AppLayout";
-import { getSiteAlarms, getSiteFirewallRules, getSiteEvents } from "@/lib/unifi";
-import AlarmsPanel from "@/components/dashboard/AlarmsPanel";
-import { RefreshCw, ShieldAlert, Flame, Bell } from "lucide-react";
+import { ShieldAlert, Shield, Zap, AlertTriangle, CheckCircle, Globe, Clock } from "lucide-react";
 
 export default function Security() {
   const { selectedSite } = useNetwork();
-  const [alarms, setAlarms] = useState([]);
-  const [firewallRules, setFirewallRules] = useState([]);
-  const [events, setEvents] = useState([]);
-  const [tab, setTab] = useState("alarms");
-  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (selectedSite?.id) load();
-  }, [selectedSite]);
+  if (!selectedSite) {
+    return <div className="flex items-center justify-center h-full text-slate-500">No site selected</div>;
+  }
 
-  const load = async () => {
-    setLoading(true);
-    const [alarmResult, fwResult, evResult] = await Promise.all([
-      getSiteAlarms(selectedSite.id),
-      getSiteFirewallRules(selectedSite.id),
-      getSiteEvents(selectedSite.id),
-    ]);
-    const extract = (r) => Array.isArray(r?.data?.data) ? r.data.data : Array.isArray(r?.data) ? r.data : [];
-    setAlarms(extract(alarmResult));
-    setFirewallRules(extract(fwResult));
-    setEvents(extract(evResult));
-    setLoading(false);
-  };
+  const counts = selectedSite.statistics?.counts || {};
+  const gateway = selectedSite.statistics?.gateway || {};
+  const internetIssues = selectedSite.statistics?.internetIssues || [];
+  const ips = gateway.ipsSignature || {};
+  const wanMagic = selectedSite.statistics?.wanMagic || {};
+  const percentages = selectedSite.statistics?.percentages || {};
 
-  const tabs = [
-    { id: "alarms", label: "Alarms", icon: Bell, count: alarms.length },
-    { id: "firewall", label: "Firewall Rules", icon: Flame, count: firewallRules.length },
-    { id: "events", label: "Events", icon: ShieldAlert, count: events.length },
-  ];
+  const ipsMode = (gateway.ipsMode || "").toLowerCase();
+  const ipsModeLabel = ipsMode === "ids" ? "IDS (Detection Only)" : ipsMode === "ips" ? "IPS (Active Prevention)" : ipsMode || "—";
+  const ipsColor = ipsMode === "ips" ? "text-green-400" : ipsMode === "ids" ? "text-yellow-400" : "text-slate-400";
+  const ipsBg = ipsMode === "ips" ? "bg-green-500/20 border-green-500/30" : ipsMode === "ids" ? "bg-yellow-500/20 border-yellow-500/30" : "bg-slate-800 border-slate-700";
+
+  const rulesUpdated = ips.rulesUpdatedAt ? new Date(ips.rulesUpdatedAt).toLocaleDateString() : null;
 
   return (
     <div className="p-6 flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-white flex items-center gap-2"><ShieldAlert className="w-5 h-5 text-red-400" /> Security</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Alarms, firewall, and events</p>
-        </div>
-        <button onClick={load} disabled={loading} className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-white transition-colors">
-          <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} /> Refresh
-        </button>
+      <div>
+        <h1 className="text-xl font-bold text-white flex items-center gap-2">
+          <ShieldAlert className="w-5 h-5 text-red-400" /> Security
+        </h1>
+        <p className="text-sm text-slate-500 mt-0.5">
+          {counts.criticalNotification > 0 ? `${counts.criticalNotification} critical notification(s)` : "No critical alerts"} · {selectedSite.name}
+        </p>
       </div>
 
-      <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
-        {/* Tabs */}
-        <div className="flex border-b border-slate-800">
-          {tabs.map(t => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={`flex items-center gap-2 px-5 py-3 text-sm font-medium transition-colors border-b-2 ${
-                tab === t.id
-                  ? "border-blue-500 text-white"
-                  : "border-transparent text-slate-400 hover:text-slate-300"
-              }`}
-            >
-              <t.icon className="w-4 h-4" />
-              {t.label}
-              {t.count > 0 && (
-                <span className="bg-slate-700 text-slate-300 text-xs px-1.5 py-0.5 rounded-full">{t.count}</span>
-              )}
-            </button>
-          ))}
+      {/* Status cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className={`rounded-xl border p-5 ${counts.criticalNotification > 0 ? "bg-red-500/10 border-red-500/30" : "bg-green-500/10 border-green-500/30"}`}>
+          <div className="flex items-center gap-2 mb-3">
+            {counts.criticalNotification > 0
+              ? <AlertTriangle className="w-4 h-4 text-red-400" />
+              : <CheckCircle className="w-4 h-4 text-green-400" />}
+            <span className="text-xs text-slate-400 font-medium uppercase tracking-wider">Critical Alerts</span>
+          </div>
+          <div className={`text-4xl font-bold ${counts.criticalNotification > 0 ? "text-red-400" : "text-green-400"}`}>
+            {counts.criticalNotification || 0}
+          </div>
         </div>
 
-        <div className="p-5">
-          {loading ? (
-            <div className="text-center text-slate-500 py-12">Loading...</div>
-          ) : tab === "alarms" ? (
-            <AlarmsPanel alarms={alarms} />
-          ) : tab === "firewall" ? (
-            <div className="overflow-x-auto">
-              {!firewallRules.length ? (
-                <div className="text-center text-slate-500 py-12">No firewall rules</div>
-              ) : (
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-700/50 text-left">
-                      <th className="pb-3 pr-4 text-slate-400 font-medium">Name</th>
-                      <th className="pb-3 pr-4 text-slate-400 font-medium">Action</th>
-                      <th className="pb-3 pr-4 text-slate-400 font-medium">Protocol</th>
-                      <th className="pb-3 pr-4 text-slate-400 font-medium">Source</th>
-                      <th className="pb-3 text-slate-400 font-medium">Destination</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {firewallRules.map((r, i) => (
-                      <tr key={r.id || i} className="border-b border-slate-800/50 hover:bg-slate-800/30">
-                        <td className="py-3 pr-4 text-white font-medium">{r.name || "Rule " + (i + 1)}</td>
-                        <td className="py-3 pr-4">
-                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${r.action === "accept" ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>
-                            {r.action || "—"}
-                          </span>
-                        </td>
-                        <td className="py-3 pr-4 text-slate-400">{r.protocol || "all"}</td>
-                        <td className="py-3 pr-4 text-slate-400 font-mono text-xs">{r.srcAddress || r.source || "any"}</td>
-                        <td className="py-3 text-slate-400 font-mono text-xs">{r.dstAddress || r.destination || "any"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
+        <div className={`rounded-xl border p-5 ${ipsBg}`}>
+          <div className="flex items-center gap-2 mb-3">
+            <Shield className={`w-4 h-4 ${ipsColor}`} />
+            <span className="text-xs text-slate-400 font-medium uppercase tracking-wider">IPS/IDS Mode</span>
+          </div>
+          <div className={`text-lg font-bold ${ipsColor}`}>{ipsModeLabel}</div>
+        </div>
+
+        <div className={`rounded-xl border p-5 ${internetIssues.length > 0 ? "bg-yellow-500/10 border-yellow-500/30" : "bg-green-500/10 border-green-500/30"}`}>
+          <div className="flex items-center gap-2 mb-3">
+            <Globe className={`w-4 h-4 ${internetIssues.length > 0 ? "text-yellow-400" : "text-green-400"}`} />
+            <span className="text-xs text-slate-400 font-medium uppercase tracking-wider">Internet Issues</span>
+          </div>
+          <div className={`text-4xl font-bold ${internetIssues.length > 0 ? "text-yellow-400" : "text-green-400"}`}>
+            {internetIssues.length}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* IPS Details */}
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
+          <h2 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+            <Zap className="w-4 h-4 text-yellow-400" /> Intrusion Detection/Prevention
+          </h2>
+          <div className="flex flex-col gap-3">
+            {[
+              { label: "Mode", value: ipsModeLabel, className: ipsColor },
+              { label: "Signature Type", value: ips.type || "—" },
+              { label: "Active Rules", value: ips.rulesCount?.toLocaleString() || "—" },
+              { label: "Signatures Updated", value: rulesUpdated || "—" },
+              { label: "Gateway Model", value: gateway.shortname || "—" },
+            ].map(item => (
+              <div key={item.label} className="flex items-center justify-between py-1.5 border-b border-slate-800/60 last:border-0">
+                <span className="text-xs text-slate-400">{item.label}</span>
+                <span className={`text-sm font-medium ${item.className || "text-white"}`}>{item.value}</span>
+              </div>
+            ))}
+          </div>
+
+          {ipsMode === "ids" && (
+            <div className="mt-4 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-xs text-yellow-300">
+              <AlertTriangle className="w-3.5 h-3.5 inline mr-1.5 mb-0.5" />
+              IDS mode detects threats but does not block them. Switch to IPS mode in your UniFi controller for active prevention.
             </div>
-          ) : (
-            <div className="flex flex-col gap-2 max-h-96 overflow-y-auto">
-              {!events.length ? (
-                <div className="text-center text-slate-500 py-12">No events</div>
-              ) : events.map((ev, i) => (
-                <div key={ev.id || i} className="flex items-start gap-3 p-3 rounded-lg bg-slate-800/50 border border-slate-700/30">
-                  <div className="flex-1">
-                    <div className="text-sm text-white">{ev.message || ev.type || ev.key || "Event"}</div>
-                    <div className="text-xs text-slate-500 mt-0.5 flex gap-3">
-                      {ev.datetime && <span>{new Date(ev.datetime).toLocaleString()}</span>}
-                      {ev.subsystem && <span className="uppercase">{ev.subsystem}</span>}
+          )}
+        </div>
+
+        {/* WAN & connectivity */}
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
+          <h2 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+            <Globe className="w-4 h-4 text-blue-400" /> WAN & Connectivity
+          </h2>
+          <div className="flex flex-col gap-3">
+            {[
+              { label: "WAN Uptime", value: percentages.wanUptime != null ? `${percentages.wanUptime.toFixed(2)}%` : "—" },
+              { label: "TX Retry Rate", value: percentages.txRetry != null ? `${percentages.txRetry.toFixed(2)}%` : "—", warn: percentages.txRetry > 10 },
+              { label: "WAN Magic", value: wanMagic.available ? (wanMagic.enabled ? "Enabled" : "Available (Disabled)") : "Not Available" },
+              { label: "Offline Devices", value: counts.offlineDevice || 0, warn: counts.offlineDevice > 0 },
+              { label: "Offline Gateway", value: counts.offlineGatewayDevice || 0, warn: counts.offlineGatewayDevice > 0 },
+              { label: "Offline APs", value: counts.offlineWifiDevice || 0, warn: counts.offlineWifiDevice > 0 },
+            ].map(item => (
+              <div key={item.label} className="flex items-center justify-between py-1.5 border-b border-slate-800/60 last:border-0">
+                <span className="text-xs text-slate-400">{item.label}</span>
+                <span className={`text-sm font-medium ${item.warn ? "text-yellow-400" : "text-white"}`}>{String(item.value)}</span>
+              </div>
+            ))}
+          </div>
+
+          {internetIssues.length > 0 && (
+            <div className="mt-4">
+              <div className="text-xs font-semibold text-slate-400 mb-2 flex items-center gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5 text-yellow-400" /> Internet Issues
+              </div>
+              {internetIssues.map((issue, i) => (
+                <div key={i} className="p-2.5 rounded bg-yellow-500/10 border border-yellow-500/20 text-xs text-yellow-300 mb-2">
+                  <div>{issue.type || issue.message || JSON.stringify(issue)}</div>
+                  {issue.datetime && (
+                    <div className="flex items-center gap-1 mt-1 text-yellow-500">
+                      <Clock className="w-3 h-3" />
+                      {new Date(issue.datetime).toLocaleString()}
                     </div>
-                  </div>
+                  )}
                 </div>
               ))}
             </div>

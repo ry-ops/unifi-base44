@@ -25,7 +25,7 @@ export default function AppLayout() {
       const siteList = Array.isArray(result?.data?.data) ? result.data.data : [];
       if (siteList.length > 0) {
         // Normalize: API returns siteId, map to id for consistency
-        const normalized = siteList.map(s => ({ ...s, id: s.siteId || s.id, name: s.meta?.desc || s.meta?.name || s.siteId }));
+        const normalized = siteList.map(s => ({ ...s, id: s.siteId || s.id, hostId: s.hostId, name: s.meta?.desc || s.meta?.name || s.siteId }));
         setSites(normalized);
         if (!selectedSite) setSelectedSite(normalized[0]);
       } else {

@@ -17,28 +17,12 @@ export async function getSiteClients(siteId) {
   return unifiCall("GET", `/v1/sites/${siteId}/clients`);
 }
 
-export async function getSiteStatistics(siteId) {
-  return unifiCall("GET", `/v1/sites/${siteId}/statistics`);
+export async function getHosts() {
+  return unifiCall("GET", "/v1/hosts");
 }
 
-export async function getSiteAlarms(siteId) {
-  return unifiCall("GET", `/v1/sites/${siteId}/alarms`);
-}
-
-export async function getSiteFirewallRules(siteId) {
-  return unifiCall("GET", `/v1/sites/${siteId}/firewall/rules`);
-}
-
-export async function getSiteNetworks(siteId) {
-  return unifiCall("GET", `/v1/sites/${siteId}/networks`);
-}
-
-export async function getSiteWlans(siteId) {
-  return unifiCall("GET", `/v1/sites/${siteId}/wlans`);
-}
-
-export async function getSiteEvents(siteId) {
-  return unifiCall("GET", `/v1/sites/${siteId}/events`);
+export async function getHost(hostId) {
+  return unifiCall("GET", `/v1/hosts/${hostId}`);
 }
 
 export function getDeviceStatusColor(state) {
