@@ -4,7 +4,7 @@ import { getSiteClients, getNetworkSites, formatBytes } from "@/lib/unifi";
 import { Users, Wifi, Activity, UserCheck, RefreshCw, Search, Monitor, Smartphone } from "lucide-react";
 
 function connectionIcon(client) {
-  if (client.type === "WIRELESS" || client.connectionType === "wireless" || client.wlanId) {
+  if (client.type === "WIRELESS") {
     return <Wifi className="w-3.5 h-3.5 text-blue-400" />;
   }
   return <Activity className="w-3.5 h-3.5 text-green-400" />;
@@ -46,9 +46,9 @@ export default function Clients() {
   const counts = selectedSite.statistics?.counts || {};
   const smTotal = (counts.wifiClient || 0) + (counts.wiredClient || 0);
   const totalClients = clients.length || smTotal;
-  const wifiClients = clients.length ? clients.filter(c => c.type === "WIRELESS" || c.connectionType === "wireless" || c.wlanId) : [];
-  const wiredClients = clients.length ? clients.filter(c => c.type === "WIRED" || c.connectionType === "wired" || (!c.wlanId && !c.type)) : [];
-  const guestClients = clients.filter(c => c.isGuest);
+  const wifiClients = clients.filter(c => c.type === "WIRELESS");
+  const wiredClients = clients.filter(c => c.type === "WIRED");
+  const guestClients = clients.filter(c => c.isGuest || c.access?.type === "GUEST");
 
   const wifiCount = clients.length ? wifiClients.length : counts.wifiClient || 0;
   const wiredCount = clients.length ? wiredClients.length : counts.wiredClient || 0;
@@ -58,7 +58,9 @@ export default function Clients() {
   const filtered = clients.filter(c => {
     if (!search) return true;
     const q = search.toLowerCase();
-    return (c.name || c.hostname || c.mac || "").toLowerCase().includes(q) || (c.ip || c.ipAddress || "").includes(q);
+    return (c.name || c.hostname || "").toLowerCase().includes(q)
+      || (c.macAddress || c.mac || "").toLowerCase().includes(q)
+      || (c.ipAddress || c.ip || "").includes(q);
   });
 
   return (
@@ -153,30 +155,30 @@ export default function Clients() {
                   <th className="text-left px-4 py-3 text-slate-400 font-medium">Connection</th>
                   <th className="text-left px-4 py-3 text-slate-400 font-medium">Network</th>
                   <th className="text-left px-4 py-3 text-slate-400 font-medium">Signal</th>
-                  <th className="text-left px-4 py-3 text-slate-400 font-medium">TX / RX</th>
+                  <th className="text-left px-4 py-3 text-slate-400 font-medium">Connected At</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((c, i) => (
-                  <tr key={c.id || c.mac || i} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
+                  <tr key={c.id || c.macAddress || i} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <Monitor className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
                         <div>
                           <div className="text-white text-sm font-medium">{c.name || c.hostname || "Unknown"}</div>
-                          {c.mac && <div className="text-xs text-slate-500 font-mono">{c.mac}</div>}
+                          {(c.macAddress || c.mac) && <div className="text-xs text-slate-500 font-mono">{c.macAddress || c.mac}</div>}
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-slate-300 font-mono text-xs">{c.ip || c.ipAddress || "—"}</td>
+                    <td className="px-4 py-3 text-slate-300 font-mono text-xs">{c.ipAddress || c.ip || "—"}</td>
                     <td className="px-4 py-3">
                       <span className="flex items-center gap-1.5 text-xs">
                         {connectionIcon(c)}
-                        <span className="text-slate-300">{c.type || (c.wlanId ? "Wireless" : "Wired")}</span>
-                        {c.isGuest && <span className="ml-1 px-1.5 py-0.5 rounded text-xs bg-yellow-500/20 text-yellow-400">Guest</span>}
+                        <span className="text-slate-300">{c.type || "—"}</span>
+                        {(c.isGuest || c.access?.type === "GUEST") && <span className="ml-1 px-1.5 py-0.5 rounded text-xs bg-yellow-500/20 text-yellow-400">Guest</span>}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-slate-400 text-xs">{c.networkName || c.wlanName || c.vlanId || "—"}</td>
+                    <td className="px-4 py-3 text-slate-400 text-xs">{c.networkName || c.wlanName || c.uplinkDeviceId?.slice(0, 8) || "—"}</td>
                     <td className="px-4 py-3 text-xs">
                       {c.signal != null ? (
                         <span className={c.signal > -60 ? "text-green-400" : c.signal > -75 ? "text-yellow-400" : "text-red-400"}>
@@ -185,9 +187,7 @@ export default function Clients() {
                       ) : <span className="text-slate-600">—</span>}
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-400">
-                      {c.txBytes || c.rxBytes ? (
-                        <span>{formatBytes(c.txBytes)} / {formatBytes(c.rxBytes)}</span>
-                      ) : "—"}
+                      {c.connectedAt ? new Date(c.connectedAt).toLocaleString() : "—"}
                     </td>
                   </tr>
                 ))}
