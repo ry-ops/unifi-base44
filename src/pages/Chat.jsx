@@ -20,7 +20,7 @@ export default function Chat() {
     const siteId = networkSiteId;
 
     // Fetch enriched context in parallel; gracefully skip failures
-    const safeCall = (fn) => fn.catch(() => null);
+    const safeCall = (fn) => fn().catch(() => null);
 
     const [alarms, events, devices, clients, ispMetrics] = await Promise.all([
       hostId && siteId ? safeCall(() => getSiteAlarms(hostId, siteId)) : Promise.resolve(null),
