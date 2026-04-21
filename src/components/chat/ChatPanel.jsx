@@ -320,12 +320,13 @@ export default function ChatPanel({ contextData }) {
             <Send className="w-4 h-4 text-white" />
           </button>
         </div>
-        <div className="flex gap-2 mt-2 flex-wrap">
+        <div className="grid grid-cols-2 gap-1.5 mt-2">
           {["Show all alarms", "List offline devices", "How many clients are connected?", "Show firewall rules"].map(q => (
             <button
               key={q}
               onClick={() => sendMessage(q)}
-              className="text-xs px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 border border-slate-700/50 transition-colors"
+              disabled={loading}
+              className="text-xs px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-slate-400 hover:text-slate-200 border border-slate-700/50 transition-colors text-left truncate"
             >
               {q}
             </button>
