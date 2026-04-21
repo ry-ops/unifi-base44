@@ -2,6 +2,119 @@ import React, { useState, useRef, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Send, Bot, User, Loader2, AlertTriangle, Check, X, Terminal } from "lucide-react";
 
+function renderMarkdown(text) {
+  const lines = text.split("\n");
+  const elements = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    // Heading
+    if (line.startsWith("### ")) {
+      elements.push(<h3 key={i} className="text-sm font-bold text-white mt-3 mb-1">{line.slice(4)}</h3>);
+      i++; continue;
+    }
+    if (line.startsWith("## ")) {
+      elements.push(<h2 key={i} className="text-base font-bold text-white mt-3 mb-1">{line.slice(3)}</h2>);
+      i++; continue;
+    }
+    if (line.startsWith("# ")) {
+      elements.push(<h1 key={i} className="text-lg font-bold text-white mt-3 mb-1">{line.slice(2)}</h1>);
+      i++; continue;
+    }
+
+    // Table detection: starts with |
+    if (line.startsWith("|")) {
+      const tableLines = [];
+      while (i < lines.length && lines[i].startsWith("|")) {
+        tableLines.push(lines[i]);
+        i++;
+      }
+      // Filter out separator rows (---|---)
+      const rows = tableLines.filter(l => !l.match(/^\|[\s\-|]+\|$/));
+      const parseRow = (l) => l.split("|").slice(1, -1).map(c => c.trim());
+      const [header, ...body] = rows;
+      elements.push(
+        <div key={`table-${i}`} className="overflow-x-auto my-2 rounded-lg border border-slate-700">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="bg-slate-700/60 border-b border-slate-600">
+                {parseRow(header || "").map((cell, ci) => (
+                  <th key={ci} className="px-3 py-2 text-left text-slate-300 font-semibold">{cell}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {body.map((row, ri) => (
+                <tr key={ri} className={`border-b border-slate-700/50 ${ri % 2 === 0 ? "" : "bg-slate-700/20"}`}>
+                  {parseRow(row).map((cell, ci) => (
+                    <td key={ci} className="px-3 py-2 text-slate-300">{cell || <span className="text-slate-600 italic">—</span>}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+      continue;
+    }
+
+    // Bullet list
+    if (line.match(/^[-*] /)) {
+      const items = [];
+      while (i < lines.length && lines[i].match(/^[-*] /)) {
+        items.push(lines[i].slice(2));
+        i++;
+      }
+      elements.push(
+        <ul key={`ul-${i}`} className="my-1 flex flex-col gap-0.5">
+          {items.map((item, ii) => (
+            <li key={ii} className="flex gap-2 text-slate-300 text-sm">
+              <span className="text-blue-400 mt-0.5 flex-shrink-0">•</span>
+              <span>{inlineFormat(item)}</span>
+            </li>
+          ))}
+        </ul>
+      );
+      continue;
+    }
+
+    // Blank line
+    if (line.trim() === "") {
+      elements.push(<div key={i} className="h-1" />);
+      i++; continue;
+    }
+
+    // Normal paragraph
+    elements.push(
+      <p key={i} className="text-sm text-slate-200 leading-relaxed">{inlineFormat(line)}</p>
+    );
+    i++;
+  }
+
+  return elements;
+}
+
+function inlineFormat(text) {
+  // Handle **bold**, *italic*, and `code`
+  const parts = [];
+  const regex = /(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g;
+  let last = 0;
+  let match;
+  let key = 0;
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > last) parts.push(text.slice(last, match.index));
+    const m = match[0];
+    if (m.startsWith("**")) parts.push(<strong key={key++} className="text-white font-semibold">{m.slice(2, -2)}</strong>);
+    else if (m.startsWith("*")) parts.push(<em key={key++} className="text-slate-300 italic">{m.slice(1, -1)}</em>);
+    else if (m.startsWith("`")) parts.push(<code key={key++} className="px-1.5 py-0.5 rounded bg-slate-900 text-blue-300 font-mono text-xs">{m.slice(1, -1)}</code>);
+    last = match.index + m.length;
+  }
+  if (last < text.length) parts.push(text.slice(last));
+  return parts.length > 0 ? parts : text;
+}
+
 function parseActionProposal(text) {
   const match = text.match(/ACTION_PROPOSAL:\s*(\{[\s\S]*?\})/);
   if (match) {
@@ -25,12 +138,12 @@ function MessageBubble({ message, onConfirm, onDeny }) {
         {isUser ? <User className="w-3.5 h-3.5 text-white" /> : <Bot className="w-3.5 h-3.5 text-blue-400" />}
       </div>
       <div className={`max-w-[75%] flex flex-col gap-2 ${isUser ? "items-end" : "items-start"}`}>
-        <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
+        <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
           isUser
-            ? "bg-blue-600 text-white rounded-tr-sm"
-            : "bg-slate-800 text-slate-200 rounded-tl-sm border border-slate-700/50"
+            ? "bg-blue-600 text-white rounded-tr-sm whitespace-pre-wrap"
+            : "bg-slate-800 rounded-tl-sm border border-slate-700/50"
         }`}>
-          {cleanText || message.content}
+          {isUser ? (cleanText || message.content) : renderMarkdown(cleanText || message.content)}
         </div>
 
         {hasAction && (
