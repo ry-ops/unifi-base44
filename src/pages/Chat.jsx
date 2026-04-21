@@ -16,7 +16,8 @@ export default function Chat() {
   const loadContext = async () => {
     setLoadingContext(true);
     const hostId = selectedSite.hostId;
-    const siteId = selectedSite.networkSiteId || selectedSite.id;
+    const networkSiteId = selectedSite.networkSiteId || selectedSite.id;
+    const siteId = networkSiteId;
 
     // Fetch enriched context in parallel; gracefully skip failures
     const safeCall = (fn) => fn.catch(() => null);
