@@ -239,13 +239,33 @@ export default function ChatPanel({ contextData }) {
       pendingAction: action,
     });
     const result = response.data?.actionResult;
-    setMessages(prev => [...prev, {
-      role: "assistant",
-      content: result?.ok
-        ? `Action completed successfully. Response: ${JSON.stringify(result.data, null, 2)}`
-        : `Action failed with status ${result?.status}: ${JSON.stringify(result?.data)}`,
-      actionResult: result,
-    }]);
+
+    // For successful reads (GET), ask the AI to summarize the response data
+    const isRead = action.method === "GET";
+    if (result?.ok && isRead) {
+      const summaryMessages = [
+        ...messages.filter(m => !m.actionProposal),
+        { role: "user", content: `Here is the API response data. Please summarize it in a clean, human-readable format:\n\n${JSON.stringify(result.data, null, 2)}` }
+      ];
+      const summaryRes = await base44.functions.invoke("unifiChat", {
+        messages: summaryMessages,
+        contextData,
+      });
+      const summaryReply = summaryRes.data?.reply || "Action completed successfully.";
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: summaryReply,
+        actionProposal: parseActionProposal(summaryReply),
+      }]);
+    } else {
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: result?.ok
+          ? "Action completed successfully."
+          : `Action failed with status ${result?.status}: ${JSON.stringify(result?.data)}`,
+        actionResult: result,
+      }]);
+    }
     setLoading(false);
   };
 

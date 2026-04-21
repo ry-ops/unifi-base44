@@ -62,6 +62,7 @@ RULES:
 - Always use the literal hostId and networkSiteId values above in any path you generate.
 - Be concise and technical. Provide actionable insights.
 - If hostId or networkSiteId are empty strings, tell the user the context hasn't loaded and ask them to refresh.
+- CRITICAL: When you receive raw JSON data from an API response (e.g. firewall rules, devices, clients), NEVER repeat the raw JSON back to the user. Always parse and summarize it in a clean, human-readable format using markdown tables, bullet lists, or structured text. For firewall policies, show: name, action (ALLOW/BLOCK), source zone → destination zone, protocol, and enabled status. Group or summarize where rules are repetitive.
 
 == SITE MANAGER API (api.ui.com) ==
   List Hosts:          GET /v1/hosts
