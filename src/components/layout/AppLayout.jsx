@@ -2,7 +2,7 @@ import React, { useState, useEffect, createContext, useContext } from "react";
 import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import { getSites, getNetworkSites } from "@/lib/unifi";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Menu } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 
 const NetworkContext = createContext(null);
@@ -15,6 +15,7 @@ export default function AppLayout() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastRefresh, setLastRefresh] = useState(null);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const loadSites = async () => {
     setLoading(true);
@@ -70,22 +71,30 @@ export default function AppLayout() {
           sites={sites}
           selectedSite={selectedSite}
           onSiteChange={setSelectedSite}
+          mobileOpen={mobileSidebarOpen}
+          onMobileClose={() => setMobileSidebarOpen(false)}
         />
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {/* Top bar */}
-          <div className="h-12 border-b border-slate-800 flex items-center justify-between px-6 flex-shrink-0">
-            <div className="flex items-center gap-2">
+          <div className="h-12 border-b border-slate-800 flex items-center justify-between px-4 flex-shrink-0">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setMobileSidebarOpen(true)}
+                className="md:hidden text-slate-400 hover:text-white p-1"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
               {selectedSite && (
-                <>
-                  <span className="text-xs text-slate-500">Site:</span>
-                  <span className="text-sm font-medium text-white">{selectedSite.name || selectedSite.hostName}</span>
-                </>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-500 hidden sm:inline">Site:</span>
+                  <span className="text-sm font-medium text-white truncate max-w-[160px] sm:max-w-none">{selectedSite.name || selectedSite.hostName}</span>
+                </div>
               )}
-              {error && <span className="text-xs text-red-400">{error}</span>}
+              {error && <span className="text-xs text-red-400 truncate">{error}</span>}
             </div>
             <div className="flex items-center gap-3">
               {lastRefresh && (
-                <span className="text-xs text-slate-600">Updated {lastRefresh.toLocaleTimeString()}</span>
+                <span className="text-xs text-slate-600 hidden sm:inline">Updated {lastRefresh.toLocaleTimeString()}</span>
               )}
               <button
                 onClick={loadSites}
@@ -93,7 +102,7 @@ export default function AppLayout() {
                 className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
-                Refresh
+                <span className="hidden sm:inline">Refresh</span>
               </button>
             </div>
           </div>

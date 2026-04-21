@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Server, Users, Wifi, ShieldAlert, Terminal, MessageSquare, ChevronDown, ChevronRight } from "lucide-react";
+import { LayoutDashboard, Server, Users, Wifi, ShieldAlert, Terminal, MessageSquare, ChevronDown, ChevronRight, X } from "lucide-react";
 
 const navItems = [
   { path: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -11,16 +11,29 @@ const navItems = [
   { path: "/terminal", label: "API Terminal", icon: Terminal },
 ];
 
-export default function Sidebar({ sites = [], selectedSite, onSiteChange }) {
+export default function Sidebar({ sites = [], selectedSite, onSiteChange, mobileOpen, onMobileClose }) {
   const location = useLocation();
   const [sitesOpen, setSitesOpen] = useState(true);
 
+  const handleNavClick = () => { if (onMobileClose) onMobileClose(); };
+
   return (
-    <div className="w-56 bg-slate-900 border-r border-slate-800 flex flex-col h-full flex-shrink-0">
+    <>
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div className="fixed inset-0 bg-black/60 z-40 md:hidden" onClick={onMobileClose} />
+      )}
+
+      <div className={`
+        fixed md:relative z-50 md:z-auto
+        w-56 bg-slate-900 border-r border-slate-800 flex flex-col h-full flex-shrink-0
+        transition-transform duration-200
+        ${mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+      `}>
       {/* Logo */}
-      <div className="p-4 border-b border-slate-800">
+      <div className="p-4 border-b border-slate-800 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center flex-shrink-0">
             <Wifi className="w-4 h-4 text-white" />
           </div>
           <div>
@@ -28,6 +41,9 @@ export default function Sidebar({ sites = [], selectedSite, onSiteChange }) {
             <div className="text-xs text-slate-500">Site Manager</div>
           </div>
         </div>
+        <button onClick={onMobileClose} className="md:hidden text-slate-400 hover:text-white p-1">
+          <X className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Sites selector */}
@@ -45,7 +61,7 @@ export default function Sidebar({ sites = [], selectedSite, onSiteChange }) {
               {sites.map(site => (
                 <button
                   key={site.id}
-                  onClick={() => onSiteChange(site)}
+                  onClick={() => { onSiteChange(site); handleNavClick(); }}
                   className={`w-full text-left px-3 py-1.5 rounded-lg text-xs transition-colors truncate ${
                     selectedSite?.id === site.id
                       ? "bg-blue-600/20 text-blue-400 border border-blue-500/20"
@@ -69,6 +85,7 @@ export default function Sidebar({ sites = [], selectedSite, onSiteChange }) {
               <Link
                 key={item.path}
                 to={item.path}
+                onClick={handleNavClick}
                 className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
                   isActive
                     ? "bg-blue-600 text-white"
@@ -87,6 +104,7 @@ export default function Sidebar({ sites = [], selectedSite, onSiteChange }) {
       <div className="p-2 border-t border-slate-800">
         <Link
           to="/chat"
+          onClick={handleNavClick}
           className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
             location.pathname === "/chat"
               ? "bg-blue-600 text-white"
@@ -98,5 +116,6 @@ export default function Sidebar({ sites = [], selectedSite, onSiteChange }) {
         </Link>
       </div>
     </div>
+    </>
   );
 }
