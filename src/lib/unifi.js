@@ -88,9 +88,9 @@ export async function getSiteWlans(hostId, siteId) {
   return unifiCall("GET", connectorPath(hostId, `sites/${siteId}/wlans`));
 }
 
-/** List firewall rules on a site via Network API */
+/** List firewall policies on a site via Network API */
 export async function getSiteFirewallRules(hostId, siteId) {
-  return unifiCall("GET", connectorPath(hostId, `sites/${siteId}/firewall/rules`));
+  return unifiCall("GET", connectorPath(hostId, `sites/${siteId}/firewall/policies`));
 }
 
 /** List port forwarding rules on a site via Network API */

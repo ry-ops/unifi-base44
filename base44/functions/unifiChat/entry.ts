@@ -73,14 +73,15 @@ RULES:
   Query ISP Metrics:   POST /v1/isp-metrics/{type}/query
 
 == NETWORK API (proxied via Connector) ==
-Base path: ${connectorBase}
+CRITICAL: ALL Network API paths MUST start with the full connectorBase prefix below. Never shorten or truncate it.
+connectorBase = "${connectorBase}"
 
   Network Sites:       GET ${connectorBase}/sites
   Devices:             GET ${connectorBase}/sites/${networkSiteId}/devices
   Clients:             GET ${connectorBase}/sites/${networkSiteId}/clients
   Networks/VLANs:      GET ${connectorBase}/sites/${networkSiteId}/networks
   WiFi (WLANs):        GET ${connectorBase}/sites/${networkSiteId}/wlans
-  Firewall Rules:      GET ${connectorBase}/sites/${networkSiteId}/firewall/rules
+  Firewall Rules:      GET ${connectorBase}/sites/${networkSiteId}/firewall/policies
   Port Forwarding:     GET ${connectorBase}/sites/${networkSiteId}/port-forwarding
   Traffic Routes:      GET ${connectorBase}/sites/${networkSiteId}/traffic-routes
   Alarms:              GET ${connectorBase}/sites/${networkSiteId}/alarms
@@ -90,7 +91,7 @@ Base path: ${connectorBase}
   Restart device:      POST ${connectorBase}/sites/${networkSiteId}/devices/{deviceId}/restart
   Block client:        POST ${connectorBase}/sites/${networkSiteId}/clients/{clientId}/block
   Unblock client:      POST ${connectorBase}/sites/${networkSiteId}/clients/{clientId}/unblock
-  Create firewall rule: POST ${connectorBase}/sites/${networkSiteId}/firewall/rules
+  Create firewall policy: POST ${connectorBase}/sites/${networkSiteId}/firewall/policies
   Create port forward: POST ${connectorBase}/sites/${networkSiteId}/port-forwarding`;
 
   // Build conversation as a single prompt
