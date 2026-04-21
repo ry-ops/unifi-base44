@@ -76,13 +76,13 @@ export default function AppLayout() {
         />
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {/* Top bar */}
-          <div className="h-12 border-b border-slate-800 flex items-center justify-between px-4 flex-shrink-0">
+          <div className="h-14 border-b border-slate-800 flex items-center justify-between px-4 flex-shrink-0">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setMobileSidebarOpen(true)}
-                className="md:hidden text-slate-400 hover:text-white p-1"
+                className="flex md:hidden text-slate-400 hover:text-white p-2 -ml-1"
               >
-                <Menu className="w-5 h-5" />
+                <Menu className="w-6 h-6" />
               </button>
               {selectedSite && (
                 <div className="flex items-center gap-2">
