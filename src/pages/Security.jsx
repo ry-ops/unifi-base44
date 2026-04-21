@@ -218,8 +218,8 @@ export default function Security() {
                   <tr key={r.id || i} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
                     <td className="px-4 py-3 text-white font-medium">{r.name || `Rule ${i + 1}`}</td>
                     <td className="px-4 py-3">
-                      <span className={`text-xs px-2 py-0.5 rounded font-mono ${(r.action || "").toLowerCase() === "accept" || (r.action || "").toLowerCase() === "allow" ? "bg-green-500/20 text-green-400" : (r.action || "").toLowerCase() === "drop" || (r.action || "").toLowerCase() === "reject" ? "bg-red-500/20 text-red-400" : "bg-slate-700 text-slate-300"}`}>
-                        {r.action || "—"}
+                      <span className={`text-xs px-2 py-0.5 rounded font-mono ${(r.action?.type || "").toLowerCase() === "allow" ? "bg-green-500/20 text-green-400" : (r.action?.type || "").toLowerCase() === "block" ? "bg-red-500/20 text-red-400" : "bg-slate-700 text-slate-300"}`}>
+                        {r.action?.type || "—"}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-slate-300 text-xs font-mono">{r.protocol || "all"}</td>
