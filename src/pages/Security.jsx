@@ -31,7 +31,7 @@ export default function Security() {
       networkSiteId = match?.id || null;
     }
 
-    const safe = fn => fn.catch(() => null);
+    const safe = fn => fn().catch(() => null);
     const siteId = networkSiteId || selectedSite.id;
     const [a, fr] = await Promise.all([
       safe(() => getSiteAlarms(selectedSite.hostId, siteId)),
