@@ -223,8 +223,8 @@ export default function Security() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-slate-300 text-xs font-mono">{r.protocol || "all"}</td>
-                    <td className="px-4 py-3 text-slate-400 text-xs">{r.sourceAddress || r.source || "any"}</td>
-                    <td className="px-4 py-3 text-slate-400 text-xs">{r.destinationAddress || r.destination || "any"}</td>
+                    <td className="px-4 py-3 text-slate-400 text-xs">{r.sourceAddress || (typeof r.source === "string" ? r.source : r.source?.zoneId || "any")}</td>
+                    <td className="px-4 py-3 text-slate-400 text-xs">{r.destinationAddress || (typeof r.destination === "string" ? r.destination : r.destination?.zoneId || "any")}</td>
                     <td className="px-4 py-3">
                       <span className={`text-xs px-2 py-0.5 rounded-full ${r.enabled === false ? "bg-slate-700 text-slate-400" : "bg-purple-500/20 text-purple-400"}`}>
                         {r.enabled === false ? "Disabled" : "Active"}
