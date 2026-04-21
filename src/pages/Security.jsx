@@ -130,7 +130,7 @@ export default function Security() {
               { label: "Active Rules", value: ips.rulesCount?.toLocaleString() },
               { label: "Signatures Updated", value: rulesUpdated },
               { label: "Gateway Model", value: gateway.shortname },
-              { label: "WAN Uptime", value: percentages.wanUptime != null ? `${percentages.wanUptime.toFixed(2)}%` : null },
+              { label: "WAN Uptime", value: percentages.wanUptime != null ? `${(100 - percentages.wanUptime).toFixed(2)}%` : null },
               { label: "TX Retry Rate", value: percentages.txRetry != null ? `${percentages.txRetry.toFixed(2)}%` : null, warn: percentages.txRetry > 10 },
               { label: "WAN Magic", value: wanMagic.available ? (wanMagic.enabled ? "Enabled" : "Available (off)") : null },
             ].filter(i => i.value).map(item => (

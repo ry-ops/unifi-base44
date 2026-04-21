@@ -27,9 +27,11 @@ function computeHealthScore({ counts, percentages, gateway }) {
     score -= Math.min(10, pending * 2);
     notes.push(`${pending} update(s) pending`);
   }
-  if (wanUptime != null && wanUptime < 99) {
-    score -= Math.min(20, (99 - wanUptime) * 4);
-    notes.push(`WAN uptime ${wanUptime.toFixed(1)}%`);
+  // wanUptime from API = % downtime (0 = fully up), convert to actual uptime %
+  const actualUptime = wanUptime != null ? 100 - wanUptime : null;
+  if (actualUptime != null && actualUptime < 99) {
+    score -= Math.min(20, (99 - actualUptime) * 4);
+    notes.push(`WAN uptime ${actualUptime.toFixed(1)}%`);
   }
   if (txRetry != null && txRetry > 10) {
     score -= Math.min(10, (txRetry - 10) * 1);

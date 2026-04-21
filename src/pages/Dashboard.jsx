@@ -93,7 +93,7 @@ export default function Dashboard() {
 
       {/* Health indicators — stacked on mobile, 3-col on md */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-        {/* WAN Uptime */}
+        {/* WAN Uptime — wanUptime from API is % downtime (0 = fully up) */}
         <div className="bg-slate-900 rounded-xl border border-slate-800 p-4">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-sm font-semibold text-white flex items-center gap-2">
@@ -103,15 +103,21 @@ export default function Dashboard() {
               <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400">{internetIssues.length} issue(s)</span>
             )}
           </div>
-          <div className={`text-2xl sm:text-3xl font-bold ${wanUptime == null ? "text-slate-500" : wanUptime >= 99 ? "text-green-400" : wanUptime >= 95 ? "text-yellow-400" : "text-red-400"}`}>
-            {wanUptime != null ? `${wanUptime.toFixed(2)}%` : "—"}
-          </div>
-          <div className="mt-2 h-2 rounded-full bg-slate-800 overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all ${wanUptime >= 99 ? "bg-green-500" : wanUptime >= 95 ? "bg-yellow-500" : "bg-red-500"}`}
-              style={{ width: wanUptime != null ? `${Math.min(wanUptime, 100)}%` : "0%" }}
-            />
-          </div>
+          {(() => {
+            const uptimePct = wanUptime != null ? 100 - wanUptime : null;
+            const color = uptimePct == null ? "text-slate-500" : uptimePct >= 99 ? "text-green-400" : uptimePct >= 95 ? "text-yellow-400" : "text-red-400";
+            const barColor = uptimePct == null ? "bg-slate-700" : uptimePct >= 99 ? "bg-green-500" : uptimePct >= 95 ? "bg-yellow-500" : "bg-red-500";
+            return (
+              <>
+                <div className={`text-2xl sm:text-3xl font-bold ${color}`}>
+                  {uptimePct != null ? `${uptimePct.toFixed(2)}%` : "—"}
+                </div>
+                <div className="mt-2 h-2 rounded-full bg-slate-800 overflow-hidden">
+                  <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: uptimePct != null ? `${Math.min(uptimePct, 100)}%` : "0%" }} />
+                </div>
+              </>
+            );
+          })()}
         </div>
 
         {/* TX Retry Rate */}
