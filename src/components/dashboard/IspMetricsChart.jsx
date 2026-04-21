@@ -11,10 +11,9 @@ const RANGES = [
   { label: "7d", type: "1h", duration: "7d" },
 ];
 
-function formatBytes(bytes) {
-  if (!bytes) return "0";
-  const k = 1024 * 1024;
-  return `${(bytes / k).toFixed(1)}`;
+function formatMbps(val) {
+  if (!val) return "0";
+  return val >= 1000 ? `${(val / 1000).toFixed(1)}G` : `${val.toFixed(1)}`;
 }
 
 const CustomTooltip = ({ active, payload, label }) => {
@@ -26,7 +25,7 @@ const CustomTooltip = ({ active, payload, label }) => {
         <div key={p.dataKey} className="flex items-center gap-2">
           <span style={{ color: p.color }}>●</span>
           <span className="text-slate-300">{p.name}:</span>
-          <span className="text-white font-mono">{formatBytes(p.value)} Mbps</span>
+          <span className="text-white font-mono">{formatMbps(p.value)} Mbps</span>
         </div>
       ))}
     </div>
@@ -50,37 +49,25 @@ export default function IspMetricsChart() {
       const result = await getIspMetrics(range.type, { duration: range.duration });
       const raw = Array.isArray(result?.data?.data) ? result.data.data : [];
 
-      // Normalize: each entry may have periods[] or be a flat record
+      // Structure: raw[].periods[].{ metricTime, data.wan.{ download_kbps, upload_kbps, avgLatency } }
       const points = [];
       raw.forEach(entry => {
-        const periods = entry.periods || (entry.timestamp ? [entry] : []);
-        periods.forEach(p => {
-          const ts = p.timestamp || p.datetime;
+        (entry.periods || []).forEach(p => {
+          const ts = p.metricTime || p.timestamp;
+          const wan = p.data?.wan || {};
           if (!ts) return;
           points.push({
             time: format(new Date(ts), range.duration === "7d" ? "MM/dd HH:mm" : "HH:mm"),
-            download: (p.wanStats?.rxBytes || p.rxBytes || 0) / (1024 * 1024),
-            upload: (p.wanStats?.txBytes || p.txBytes || 0) / (1024 * 1024),
-            latency: p.wanStats?.latency || p.latency || null,
+            download: (wan.download_kbps || 0) / 1000,  // convert to Mbps
+            upload: (wan.upload_kbps || 0) / 1000,
+            latency: wan.avgLatency || null,
           });
         });
       });
 
-      // If no period data, synthesize from flat entries
-      if (!points.length && raw.length) {
-        raw.forEach(entry => {
-          const ts = entry.timestamp || entry.datetime || entry.end;
-          if (!ts) return;
-          points.push({
-            time: format(new Date(ts), "HH:mm"),
-            download: (entry.rxBytes || entry.download || 0) / (1024 * 1024),
-            upload: (entry.txBytes || entry.upload || 0) / (1024 * 1024),
-            latency: entry.latency || null,
-          });
-        });
-      }
-
-      setData(points.slice(-120)); // cap at 120 points
+      // Sort by time ascending
+      points.sort((a, b) => a.time.localeCompare(b.time));
+      setData(points.slice(-120));
     } catch (e) {
       setError("No ISP metrics available");
     }
