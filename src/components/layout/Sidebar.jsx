@@ -26,7 +26,7 @@ export default function Sidebar({ sites = [], selectedSite, onSiteChange, mobile
 
       <div className={`
         fixed md:relative z-50 md:z-auto
-        w-56 bg-slate-900 border-r border-slate-800 flex flex-col h-full flex-shrink-0
+        w-64 bg-slate-900 border-r border-slate-800 flex flex-col h-full flex-shrink-0
         transition-transform duration-200
         ${mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
       `}>
