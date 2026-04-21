@@ -40,7 +40,7 @@ export default function Networks() {
       networkSiteId = match?.id || null;
     }
 
-    const safe = fn => fn.catch(() => null);
+    const safe = fn => fn().catch(() => null);
     const siteId = networkSiteId || selectedSite.id;
     const [n, w, pf, tr] = await Promise.all([
       safe(() => getSiteNetworks(selectedSite.hostId, siteId)),
