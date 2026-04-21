@@ -1,6 +1,10 @@
 import React from "react";
 import { useNetwork } from "@/components/layout/AppLayout";
 import StatCard from "@/components/dashboard/StatCard";
+import IspMetricsChart from "@/components/dashboard/IspMetricsChart";
+import ClientDonutChart from "@/components/dashboard/ClientDonutChart";
+import DeviceHealthGauge from "@/components/dashboard/DeviceHealthGauge";
+import DeviceTypeBreakdown from "@/components/dashboard/DeviceTypeBreakdown";
 import { Server, Users, Wifi, AlertTriangle, Activity, CheckCircle, XCircle, Shield, Router, Globe, Zap, Network, Lock, TrendingUp, MonitorCheck, WifiOff } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -75,6 +79,16 @@ export default function Dashboard() {
         <StatCard title="Total Clients" value={totalClients} icon={Users} color="cyan" />
         <StatCard title="WiFi Clients" value={counts.wifiClient || 0} icon={Wifi} color="purple" />
         <StatCard title="Critical Alerts" value={counts.criticalNotification || 0} icon={AlertTriangle} color={counts.criticalNotification > 0 ? "red" : "green"} />
+      </div>
+
+      {/* ── Grafana-style telemetry panels ── */}
+      <IspMetricsChart />
+
+      {/* Health + Client + Device type panels */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        <DeviceHealthGauge statistics={selectedSite.statistics} />
+        <ClientDonutChart counts={counts} />
+        <DeviceTypeBreakdown counts={counts} />
       </div>
 
       {/* Health indicators — stacked on mobile, 3-col on md */}
