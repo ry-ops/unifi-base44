@@ -1,6 +1,32 @@
 import React, { useState, useRef, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { Send, Bot, User, Loader2, AlertTriangle, Check, X, Terminal } from "lucide-react";
+import { Send, Bot, User, Loader2, AlertTriangle, Check, X, Terminal, Trash2 } from "lucide-react";
+
+const STORAGE_KEY = "unifi_chat_history";
+const MAX_STORED = 100; // max messages to persist
+
+function loadHistory() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {}
+  return null;
+}
+
+function saveHistory(messages) {
+  try {
+    // Strip actionProposal (non-serializable React state) before saving
+    const serializable = messages.map(m => ({
+      role: m.role,
+      content: m.content,
+      actionResult: m.actionResult || null,
+    }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(serializable.slice(-MAX_STORED)));
+  } catch {}
+}
 
 function renderMarkdown(text) {
   const lines = text.split("\n");
@@ -191,18 +217,30 @@ function MessageBubble({ message, onConfirm, onDeny }) {
   );
 }
 
+const WELCOME_MSG = {
+  role: "assistant",
+  content: "Hi! I'm your UniFi AI assistant. I can help you monitor your network, answer questions about your devices and clients, and make configuration changes (with your confirmation). What would you like to know or do?",
+};
+
 export default function ChatPanel({ contextData }) {
-  const [messages, setMessages] = useState([{
-    role: "assistant",
-    content: "Hi! I'm your UniFi AI assistant. I can help you monitor your network, answer questions about your devices and clients, and make configuration changes (with your confirmation). What would you like to know or do?",
-  }]);
+  const [messages, setMessages] = useState(() => loadHistory() || [WELCOME_MSG]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef(null);
 
+  // Persist history on every change
+  useEffect(() => {
+    saveHistory(messages);
+  }, [messages]);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  const clearHistory = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setMessages([WELCOME_MSG]);
+  };
 
   const sendMessage = async (text = input) => {
     if (!text.trim() || loading) return;
@@ -303,6 +341,16 @@ export default function ChatPanel({ contextData }) {
         <div ref={bottomRef} />
       </div>
       <div className="p-4 border-t border-slate-800">
+        <div className="flex justify-end mb-2">
+          <button
+            onClick={clearHistory}
+            disabled={loading}
+            className="flex items-center gap-1 text-xs text-slate-600 hover:text-slate-400 transition-colors disabled:opacity-30"
+            title="Clear conversation history"
+          >
+            <Trash2 className="w-3 h-3" /> Clear history
+          </button>
+        </div>
         <div className="flex gap-2">
           <input
             type="text"
