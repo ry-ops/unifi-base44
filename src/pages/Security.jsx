@@ -53,9 +53,10 @@ export default function Security() {
   const percentages = selectedSite.statistics?.percentages || {};
 
   const ipsMode = (gateway.ipsMode || "").toLowerCase();
-  const ipsModeLabel = ipsMode === "ids" ? "IDS (Detection Only)" : ipsMode === "ips" ? "IPS (Active Prevention)" : ipsMode || "—";
-  const ipsColor = ipsMode === "ips" ? "text-green-400" : ipsMode === "ids" ? "text-yellow-400" : "text-slate-400";
-  const ipsBg = ipsMode === "ips" ? "bg-green-500/20 border-green-500/30" : ipsMode === "ids" ? "bg-yellow-500/20 border-yellow-500/30" : "bg-slate-800 border-slate-700";
+  const inspectionState = (gateway.inspectionState || "").toLowerCase();
+  const ipsModeLabel = ipsMode === "ids" ? "IDS — Notify & Block" : ipsMode === "ips" ? "IPS — Active Prevention" : ipsMode || "—";
+  const ipsColor = (ipsMode === "ips" || ipsMode === "ids") ? "text-green-400" : "text-slate-400";
+  const ipsBg = (ipsMode === "ips" || ipsMode === "ids") ? "bg-green-500/20 border-green-500/30" : "bg-slate-800 border-slate-700";
   const rulesUpdated = ips.rulesUpdatedAt ? new Date(ips.rulesUpdatedAt).toLocaleDateString() : null;
 
   const criticalAlarms = alarms.filter(a => (a.severity || "").toLowerCase() === "critical");
@@ -126,6 +127,7 @@ export default function Security() {
           <div className="flex flex-col">
             {[
               { label: "Mode", value: ipsModeLabel, cls: ipsColor },
+              { label: "Inspection State", value: inspectionState || null },
               { label: "Signature Type", value: ips.type },
               { label: "Active Rules", value: ips.rulesCount?.toLocaleString() },
               { label: "Signatures Updated", value: rulesUpdated },
@@ -140,10 +142,9 @@ export default function Security() {
               </div>
             ))}
           </div>
-          {ipsMode === "ids" && (
-            <div className="mt-4 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-xs text-yellow-300">
-              <AlertTriangle className="w-3.5 h-3.5 inline mr-1.5 mb-0.5" />
-              IDS mode detects threats but does not block them.
+          {inspectionState && (
+            <div className="mt-4 p-3 rounded-lg bg-slate-800 border border-slate-700 text-xs text-slate-400">
+              Inspection state: <span className="text-white font-medium">{inspectionState}</span>
             </div>
           )}
         </div>

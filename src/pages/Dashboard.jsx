@@ -30,6 +30,7 @@ export default function Dashboard() {
   const onlineDevices = (counts.totalDevice || 0) - (counts.offlineDevice || 0);
 
   const ipsMode = (gateway.ipsMode || "").toLowerCase();
+  const inspectionState = (gateway.inspectionState || "").toLowerCase();
   const wanUptime = percentages.wanUptime;
   const txRetry = percentages.txRetry;
   const hasPendingUpdates = (counts.pendingUpdateDevice || 0) > 0;
@@ -138,15 +139,22 @@ export default function Dashboard() {
           <h2 className="text-sm font-semibold text-white flex items-center gap-2 mb-2">
             <Zap className="w-4 h-4 text-yellow-400" /> IPS/IDS
           </h2>
-          <div className={`text-base sm:text-lg font-bold ${ipsMode === "ips" ? "text-green-400" : ipsMode === "ids" ? "text-yellow-400" : "text-slate-500"}`}>
-            {ipsMode === "ips" ? "IPS — Active Prevention" : ipsMode === "ids" ? "IDS — Detection Only" : ipsMode ? ipsMode.toUpperCase() : "—"}
-          </div>
-          {gateway.ipsSignature?.rulesCount && (
-            <div className="text-xs text-slate-500 mt-1">{gateway.ipsSignature.rulesCount.toLocaleString()} active signatures</div>
-          )}
-          {ipsMode === "ids" && (
-            <div className="mt-2 text-xs text-yellow-400/80">⚠ Detection only — threats not blocked</div>
-          )}
+          {(() => {
+            const isActive = inspectionState === "on" || ipsMode === "ips" || ipsMode === "ids";
+            const modeLabel = ipsMode === "ips" ? "IPS — Active Prevention" : ipsMode === "ids" ? "IDS — Notify & Block" : ipsMode ? ipsMode.toUpperCase() : "—";
+            const color = !isActive ? "text-slate-500" : ipsMode === "ips" ? "text-green-400" : ipsMode === "ids" ? "text-green-400" : "text-slate-500";
+            return (
+              <>
+                <div className={`text-base sm:text-lg font-bold ${color}`}>{modeLabel}</div>
+                {gateway.ipsSignature?.rulesCount && (
+                  <div className="text-xs text-slate-500 mt-1">{gateway.ipsSignature.rulesCount.toLocaleString()} active signatures</div>
+                )}
+                {inspectionState && inspectionState !== "off" && (
+                  <div className="mt-1 text-xs text-green-400/80">✓ Inspection: {inspectionState}</div>
+                )}
+              </>
+            );
+          })()}
         </div>
       </div>
 
