@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { Send, Bot, User, Loader2, AlertTriangle, Check, X, Terminal, Trash2 } from "lucide-react";
+import { Send, Bot, User, Loader2, Trash2 } from "lucide-react";
 
 const STORAGE_KEY = "unifi_chat_history";
-const MAX_STORED = 100; // max messages to persist
+const MAX_STORED = 100;
 
 function loadHistory() {
   try {
@@ -18,14 +18,24 @@ function loadHistory() {
 
 function saveHistory(messages) {
   try {
-    // Strip actionProposal (non-serializable React state) before saving
-    const serializable = messages.map(m => ({
-      role: m.role,
-      content: m.content,
-      actionResult: m.actionResult || null,
-    }));
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(serializable.slice(-MAX_STORED)));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages.slice(-MAX_STORED)));
   } catch {}
+}
+
+function inlineFormat(text) {
+  const parts = [];
+  const regex = /(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g;
+  let last = 0, match, key = 0;
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > last) parts.push(text.slice(last, match.index));
+    const m = match[0];
+    if (m.startsWith("**")) parts.push(<strong key={key++} className="text-white font-semibold">{m.slice(2, -2)}</strong>);
+    else if (m.startsWith("*")) parts.push(<em key={key++} className="text-slate-300 italic">{m.slice(1, -1)}</em>);
+    else if (m.startsWith("`")) parts.push(<code key={key++} className="px-1.5 py-0.5 rounded bg-slate-900 text-blue-300 font-mono text-xs">{m.slice(1, -1)}</code>);
+    last = match.index + m.length;
+  }
+  if (last < text.length) parts.push(text.slice(last));
+  return parts.length > 0 ? parts : text;
 }
 
 function renderMarkdown(text) {
@@ -36,28 +46,13 @@ function renderMarkdown(text) {
   while (i < lines.length) {
     const line = lines[i];
 
-    // Heading
-    if (line.startsWith("### ")) {
-      elements.push(<h3 key={i} className="text-sm font-bold text-white mt-3 mb-1">{line.slice(4)}</h3>);
-      i++; continue;
-    }
-    if (line.startsWith("## ")) {
-      elements.push(<h2 key={i} className="text-base font-bold text-white mt-3 mb-1">{line.slice(3)}</h2>);
-      i++; continue;
-    }
-    if (line.startsWith("# ")) {
-      elements.push(<h1 key={i} className="text-lg font-bold text-white mt-3 mb-1">{line.slice(2)}</h1>);
-      i++; continue;
-    }
+    if (line.startsWith("### ")) { elements.push(<h3 key={i} className="text-sm font-bold text-white mt-3 mb-1">{line.slice(4)}</h3>); i++; continue; }
+    if (line.startsWith("## ")) { elements.push(<h2 key={i} className="text-base font-bold text-white mt-3 mb-1">{line.slice(3)}</h2>); i++; continue; }
+    if (line.startsWith("# ")) { elements.push(<h1 key={i} className="text-lg font-bold text-white mt-3 mb-1">{line.slice(2)}</h1>); i++; continue; }
 
-    // Table detection: starts with |
     if (line.startsWith("|")) {
       const tableLines = [];
-      while (i < lines.length && lines[i].startsWith("|")) {
-        tableLines.push(lines[i]);
-        i++;
-      }
-      // Filter out separator rows (---|---)
+      while (i < lines.length && lines[i].startsWith("|")) { tableLines.push(lines[i]); i++; }
       const rows = tableLines.filter(l => !l.match(/^\|[\s\-|]+\|$/));
       const parseRow = (l) => l.split("|").slice(1, -1).map(c => c.trim());
       const [header, ...body] = rows;
@@ -66,17 +61,13 @@ function renderMarkdown(text) {
           <table className="w-full text-xs">
             <thead>
               <tr className="bg-slate-700/60 border-b border-slate-600">
-                {parseRow(header || "").map((cell, ci) => (
-                  <th key={ci} className="px-3 py-2 text-left text-slate-300 font-semibold">{cell}</th>
-                ))}
+                {parseRow(header || "").map((cell, ci) => <th key={ci} className="px-3 py-2 text-left text-slate-300 font-semibold">{cell}</th>)}
               </tr>
             </thead>
             <tbody>
               {body.map((row, ri) => (
                 <tr key={ri} className={`border-b border-slate-700/50 ${ri % 2 === 0 ? "" : "bg-slate-700/20"}`}>
-                  {parseRow(row).map((cell, ci) => (
-                    <td key={ci} className="px-3 py-2 text-slate-300">{cell || <span className="text-slate-600 italic">—</span>}</td>
-                  ))}
+                  {parseRow(row).map((cell, ci) => <td key={ci} className="px-3 py-2 text-slate-300">{cell || <span className="text-slate-600 italic">—</span>}</td>)}
                 </tr>
               ))}
             </tbody>
@@ -86,13 +77,9 @@ function renderMarkdown(text) {
       continue;
     }
 
-    // Bullet list
     if (line.match(/^[-*] /)) {
       const items = [];
-      while (i < lines.length && lines[i].match(/^[-*] /)) {
-        items.push(lines[i].slice(2));
-        i++;
-      }
+      while (i < lines.length && lines[i].match(/^[-*] /)) { items.push(lines[i].slice(2)); i++; }
       elements.push(
         <ul key={`ul-${i}`} className="my-1 flex flex-col gap-0.5">
           {items.map((item, ii) => (
@@ -106,58 +93,16 @@ function renderMarkdown(text) {
       continue;
     }
 
-    // Blank line
-    if (line.trim() === "") {
-      elements.push(<div key={i} className="h-1" />);
-      i++; continue;
-    }
-
-    // Normal paragraph
-    elements.push(
-      <p key={i} className="text-sm text-slate-200 leading-relaxed">{inlineFormat(line)}</p>
-    );
+    if (line.trim() === "") { elements.push(<div key={i} className="h-1" />); i++; continue; }
+    elements.push(<p key={i} className="text-sm text-slate-200 leading-relaxed">{inlineFormat(line)}</p>);
     i++;
   }
 
   return elements;
 }
 
-function inlineFormat(text) {
-  // Handle **bold**, *italic*, and `code`
-  const parts = [];
-  const regex = /(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g;
-  let last = 0;
-  let match;
-  let key = 0;
-  while ((match = regex.exec(text)) !== null) {
-    if (match.index > last) parts.push(text.slice(last, match.index));
-    const m = match[0];
-    if (m.startsWith("**")) parts.push(<strong key={key++} className="text-white font-semibold">{m.slice(2, -2)}</strong>);
-    else if (m.startsWith("*")) parts.push(<em key={key++} className="text-slate-300 italic">{m.slice(1, -1)}</em>);
-    else if (m.startsWith("`")) parts.push(<code key={key++} className="px-1.5 py-0.5 rounded bg-slate-900 text-blue-300 font-mono text-xs">{m.slice(1, -1)}</code>);
-    last = match.index + m.length;
-  }
-  if (last < text.length) parts.push(text.slice(last));
-  return parts.length > 0 ? parts : text;
-}
-
-function parseActionProposal(text) {
-  const match = text.match(/ACTION_PROPOSAL:\s*(\{[\s\S]*?\})/);
-  if (match) {
-    try {
-      return JSON.parse(match[1]);
-    } catch {
-      return null;
-    }
-  }
-  return null;
-}
-
-function MessageBubble({ message, onConfirm, onDeny }) {
+function MessageBubble({ message }) {
   const isUser = message.role === "user";
-  const hasAction = message.actionProposal;
-  const cleanText = message.content.replace(/ACTION_PROPOSAL:\s*\{[\s\S]*?\}/g, "").trim();
-
   return (
     <div className={`flex gap-3 ${isUser ? "flex-row-reverse" : ""}`}>
       <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${isUser ? "bg-blue-600" : "bg-slate-700"}`}>
@@ -169,49 +114,8 @@ function MessageBubble({ message, onConfirm, onDeny }) {
             ? "bg-blue-600 text-white rounded-tr-sm whitespace-pre-wrap"
             : "bg-slate-800 rounded-tl-sm border border-slate-700/50"
         }`}>
-          {isUser ? (cleanText || message.content) : renderMarkdown(cleanText || message.content)}
+          {isUser ? message.content : renderMarkdown(message.content)}
         </div>
-
-        {hasAction && (
-          <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 w-full max-w-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <AlertTriangle className="w-4 h-4 text-amber-400" />
-              <span className="text-xs font-semibold text-amber-400 uppercase tracking-wider">Action Required</span>
-            </div>
-            <p className="text-sm text-slate-200 mb-1">{hasAction.description}</p>
-            {hasAction.warning && (
-              <p className="text-xs text-amber-300/70 mb-3">{hasAction.warning}</p>
-            )}
-            <div className="flex items-center gap-1.5 text-xs font-mono text-slate-400 mb-3 bg-slate-900/50 rounded p-2">
-              <Terminal className="w-3 h-3" />
-              {hasAction.method} {hasAction.path}
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => onConfirm(hasAction)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-500 rounded-lg text-xs text-white font-medium transition-colors"
-              >
-                <Check className="w-3 h-3" /> Confirm
-              </button>
-              <button
-                onClick={onDeny}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs text-slate-300 font-medium transition-colors"
-              >
-                <X className="w-3 h-3" /> Cancel
-              </button>
-            </div>
-          </div>
-        )}
-
-        {message.actionResult && (
-          <div className={`text-xs px-3 py-2 rounded-lg border font-mono ${
-            message.actionResult.ok
-              ? "bg-green-500/10 border-green-500/30 text-green-400"
-              : "bg-red-500/10 border-red-500/30 text-red-400"
-          }`}>
-            {message.actionResult.ok ? "✓ Action executed successfully" : "✗ Action failed"} (HTTP {message.actionResult.status})
-          </div>
-        )}
       </div>
     </div>
   );
@@ -219,7 +123,7 @@ function MessageBubble({ message, onConfirm, onDeny }) {
 
 const WELCOME_MSG = {
   role: "assistant",
-  content: "Hi! I'm your UniFi AI assistant. I can help you monitor your network, answer questions about your devices and clients, and make configuration changes (with your confirmation). What would you like to know or do?",
+  content: "Hi! I'm your UniFi AI assistant. I can help you analyze and understand your network data. I answer questions based on the context loaded from your dashboard — I can't make live API calls or execute changes directly. For live queries or configuration changes, use the **API Terminal** page.\n\nWhat would you like to know?",
 };
 
 export default function ChatPanel({ contextData }) {
@@ -228,14 +132,8 @@ export default function ChatPanel({ contextData }) {
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef(null);
 
-  // Persist history on every change
-  useEffect(() => {
-    saveHistory(messages);
-  }, [messages]);
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  useEffect(() => { saveHistory(messages); }, [messages]);
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
   const clearHistory = () => {
     localStorage.removeItem(STORAGE_KEY);
@@ -256,78 +154,14 @@ export default function ChatPanel({ contextData }) {
     });
 
     const reply = response.data?.reply || "I couldn't process that request.";
-    const actionProposal = parseActionProposal(reply);
-
-    setMessages(prev => [...prev, {
-      role: "assistant",
-      content: reply,
-      actionProposal,
-    }]);
+    setMessages(prev => [...prev, { role: "assistant", content: reply }]);
     setLoading(false);
-  };
-
-  const handleConfirmAction = async (action) => {
-    setMessages(prev => prev.map(m =>
-      m.actionProposal === action ? { ...m, actionProposal: null } : m
-    ));
-    setLoading(true);
-    const response = await base44.functions.invoke("unifiChat", {
-      messages: [],
-      contextData,
-      pendingAction: action,
-    });
-    const result = response.data?.actionResult;
-
-    // For successful reads (GET), ask the AI to summarize the response data
-    const isRead = action.method === "GET";
-    if (result?.ok && isRead) {
-      const summaryMessages = [
-        ...messages.filter(m => !m.actionProposal),
-        { role: "user", content: `Here is the API response data. Please summarize it in a clean, human-readable format:\n\n${JSON.stringify(result.data, null, 2)}` }
-      ];
-      const summaryRes = await base44.functions.invoke("unifiChat", {
-        messages: summaryMessages,
-        contextData,
-      });
-      const summaryReply = summaryRes.data?.reply || "Action completed successfully.";
-      setMessages(prev => [...prev, {
-        role: "assistant",
-        content: summaryReply,
-        actionProposal: parseActionProposal(summaryReply),
-      }]);
-    } else {
-      setMessages(prev => [...prev, {
-        role: "assistant",
-        content: result?.ok
-          ? "Action completed successfully."
-          : `Action failed with status ${result?.status}: ${JSON.stringify(result?.data)}`,
-        actionResult: result,
-      }]);
-    }
-    setLoading(false);
-  };
-
-  const handleDenyAction = () => {
-    setMessages(prev => prev.map((m, i) =>
-      i === prev.length - 1 && m.actionProposal ? { ...m, actionProposal: null } : m
-    ));
-    setMessages(prev => [...prev, {
-      role: "assistant",
-      content: "Action cancelled. Let me know if you'd like to do something else.",
-    }]);
   };
 
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4 min-h-0">
-        {messages.map((msg, i) => (
-          <MessageBubble
-            key={i}
-            message={msg}
-            onConfirm={handleConfirmAction}
-            onDeny={handleDenyAction}
-          />
-        ))}
+        {messages.map((msg, i) => <MessageBubble key={i} message={msg} />)}
         {loading && (
           <div className="flex gap-3">
             <div className="w-7 h-7 rounded-full bg-slate-700 flex items-center justify-center flex-shrink-0">
@@ -357,7 +191,7 @@ export default function ChatPanel({ contextData }) {
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage()}
-            placeholder="Ask about your network or request changes..."
+            placeholder="Ask about your network..."
             className="flex-1 bg-slate-800/70 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500/50 transition-colors"
           />
           <button

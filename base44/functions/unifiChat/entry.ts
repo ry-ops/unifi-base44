@@ -1,23 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
-const UNIFI_BASE = "https://api.ui.com";
-const API_KEY = Deno.env.get("UNIFI_API_KEY");
-
-async function unifiRequest(method, path, body = null) {
-  const headers = {
-    "X-API-Key": API_KEY,
-    "Content-Type": "application/json",
-    "Accept": "application/json",
-  };
-  const options = { method, headers };
-  if (body) options.body = JSON.stringify(body);
-  const response = await fetch(`${UNIFI_BASE}${path}`, options);
-  const text = await response.text();
-  let data;
-  try { data = JSON.parse(text); } catch { data = { raw: text }; }
-  return { status: response.status, ok: response.ok, data };
-}
-
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
   let user = null;
@@ -25,78 +7,55 @@ Deno.serve(async (req) => {
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
   if (user.role !== "admin") return Response.json({ error: "Forbidden: Admin access required" }, { status: 403 });
 
-  const { messages, contextData, pendingAction } = await req.json();
-
-  // Execute a confirmed action
-  if (pendingAction) {
-    const result = await unifiRequest(
-      pendingAction.method,
-      pendingAction.path,
-      pendingAction.body || null
-    );
-    return Response.json({ actionResult: result });
-  }
+  const { messages, contextData } = await req.json();
 
   const hostId = contextData?.site?.hostId || "";
-  // Network API requires the networkSiteId (UUID), not the plain site id
   const networkSiteId = contextData?.site?.networkSiteId || contextData?.site?.id || "";
   const connectorBase = `/v1/connector/consoles/${hostId}/network/integration/v1`;
 
-  const systemPrompt = `You are a UniFi network management AI assistant with full access to the UniFi Site Manager API (api.ui.com).
+  const systemPrompt = `You are a UniFi network management AI assistant. You help users understand and monitor their UniFi network.
 
-You help users understand, monitor, and control their UniFi network infrastructure.
+IMPORTANT LIMITATIONS — be transparent about these when relevant:
+- You can ONLY answer questions based on the context data provided below.
+- You CANNOT make live API calls, authenticate to UniFi, or fetch data yourself.
+- You CANNOT execute any changes or actions directly.
+- If a user asks for data not in the context, tell them to use the "Refresh context" button or visit the relevant page in the dashboard to load that data.
+- If a user asks to make a change (restart device, block client, create rule, etc.), explain what API call would be needed and direct them to the API Terminal page (/terminal) to execute it manually.
 
-Current network context (live data):
-${contextData ? JSON.stringify(contextData, null, 2) : "No context loaded yet."}
+Current network context (pre-loaded from the dashboard):
+${contextData ? JSON.stringify(contextData, null, 2) : "No context loaded yet. Ask the user to refresh the context."}
 
-Active site: hostId=${hostId}, networkSiteId=${networkSiteId}
-
-CRITICAL: Always use the EXACT values below when building API paths. Never use placeholder text like {hostId} or {siteId}.
-  hostId       = "${hostId}"
+Active site info:
+  hostId        = "${hostId}"
   networkSiteId = "${networkSiteId}"
   connectorBase = "${connectorBase}"
 
-RULES:
-- For READ-ONLY questions: answer directly using the context data above. Do NOT propose an ACTION_PROPOSAL for read-only fetches — just answer from context.
-- For any CHANGE actions (restart, block, update config, create rule, delete, etc.): output EXACTLY ONE action proposal block at the end of your message in this format:
-  ACTION_PROPOSAL: {"method": "POST|PUT|DELETE|PATCH|GET", "path": "/v1/...", "body": {...or null}, "description": "Human readable description", "warning": "Risk warning or null"}
-- Always use the literal hostId and networkSiteId values above in any path you generate.
-- Be concise and technical. Provide actionable insights.
-- If hostId or networkSiteId are empty strings, tell the user the context hasn't loaded and ask them to refresh.
-- CRITICAL: When you receive raw JSON data from an API response (e.g. firewall rules, devices, clients), NEVER repeat the raw JSON back to the user. Always parse and summarize it in a clean, human-readable format using markdown tables, bullet lists, or structured text. For firewall policies, show: name, action (ALLOW/BLOCK), source zone → destination zone, protocol, and enabled status. Group or summarize where rules are repetitive.
+RESPONSE RULES:
+- Answer read-only questions directly from the context data above.
+- For questions about data not in the context, say what data is missing and how to load it.
+- For change requests, explain the required API call (method + path + body) and direct the user to the Terminal page to execute it.
+- Format responses clearly using markdown: tables, bullet lists, bold text for key values.
+- Never repeat raw JSON. Always summarize data in a human-readable format.
+- Be concise and technically precise.
 
-== SITE MANAGER API (api.ui.com) ==
-  List Hosts:          GET /v1/hosts
-  Get Host:            GET /v1/hosts/${hostId}
+== USEFUL API PATHS (for Terminal reference) ==
   List Sites:          GET /v1/sites
   List Devices:        GET /v1/devices?hostIds[]=${hostId}
   ISP Metrics (5m):    GET /v1/isp-metrics/5m?duration=24h
-  ISP Metrics (1h):    GET /v1/isp-metrics/1h?duration=7d
-  Query ISP Metrics:   POST /v1/isp-metrics/{type}/query
-
-== NETWORK API (proxied via Connector) ==
-CRITICAL: ALL Network API paths MUST start with the full connectorBase prefix below. Never shorten or truncate it.
-connectorBase = "${connectorBase}"
-
   Network Sites:       GET ${connectorBase}/sites
   Devices:             GET ${connectorBase}/sites/${networkSiteId}/devices
   Clients:             GET ${connectorBase}/sites/${networkSiteId}/clients
   Networks/VLANs:      GET ${connectorBase}/sites/${networkSiteId}/networks
   WiFi (WLANs):        GET ${connectorBase}/sites/${networkSiteId}/wlans
-  Firewall Rules:      GET ${connectorBase}/sites/${networkSiteId}/firewall/policies
+  Firewall Policies:   GET ${connectorBase}/sites/${networkSiteId}/firewall/policies
   Port Forwarding:     GET ${connectorBase}/sites/${networkSiteId}/port-forwarding
-  Traffic Routes:      GET ${connectorBase}/sites/${networkSiteId}/traffic-routes
   Alarms:              GET ${connectorBase}/sites/${networkSiteId}/alarms
   Events:              GET ${connectorBase}/sites/${networkSiteId}/events
 
-== WRITE ACTIONS (use ACTION_PROPOSAL) ==
   Restart device:      POST ${connectorBase}/sites/${networkSiteId}/devices/{deviceId}/restart
   Block client:        POST ${connectorBase}/sites/${networkSiteId}/clients/{clientId}/block
-  Unblock client:      POST ${connectorBase}/sites/${networkSiteId}/clients/{clientId}/unblock
-  Create firewall policy: POST ${connectorBase}/sites/${networkSiteId}/firewall/policies
-  Create port forward: POST ${connectorBase}/sites/${networkSiteId}/port-forwarding`;
+  Unblock client:      POST ${connectorBase}/sites/${networkSiteId}/clients/{clientId}/unblock`;
 
-  // Build conversation as a single prompt
   const conversationText = messages
     .map(m => `[${m.role.toUpperCase()}]: ${m.content}`)
     .join("\n\n");
