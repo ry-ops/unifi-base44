@@ -7,6 +7,7 @@ import DeviceHealthGauge from "@/components/dashboard/DeviceHealthGauge";
 import DeviceTypeBreakdown from "@/components/dashboard/DeviceTypeBreakdown";
 import { Server, Users, Wifi, AlertTriangle, Activity, CheckCircle, XCircle, Shield, Router, Globe, Zap, Network, Lock, TrendingUp, MonitorCheck, WifiOff } from "lucide-react";
 import { Link } from "react-router-dom";
+import RecentEventsFeed from "@/components/dashboard/RecentEventsFeed";
 
 export default function Dashboard() {
   const { selectedSite } = useNetwork();
@@ -251,6 +252,9 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Recent Events */}
+      <RecentEventsFeed />
 
       {/* Quick nav */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">

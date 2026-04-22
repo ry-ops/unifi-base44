@@ -121,6 +121,7 @@ export default function IspMetricsChart() {
         ) : (
           <ResponsiveContainer width="100%" height={200}>
             <AreaChart data={data} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+              <YAxis yAxisId="latency" orientation="right" tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={v => `${v}ms`} width={40} />
               <defs>
                 <linearGradient id="gradDown" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
@@ -140,6 +141,7 @@ export default function IspMetricsChart() {
                 interval="preserveStartEnd"
               />
               <YAxis
+                yAxisId={0}
                 tick={{ fill: "#64748b", fontSize: 10 }}
                 tickLine={false}
                 axisLine={false}
@@ -160,6 +162,7 @@ export default function IspMetricsChart() {
                 fill="url(#gradDown)"
                 dot={false}
                 activeDot={{ r: 3 }}
+                yAxisId={0}
               />
               <Area
                 type="monotone"
@@ -170,6 +173,18 @@ export default function IspMetricsChart() {
                 fill="url(#gradUp)"
                 dot={false}
                 activeDot={{ r: 3 }}
+                yAxisId={0}
+              />
+              <Area
+                type="monotone"
+                dataKey="latency"
+                name="Latency (ms)"
+                stroke="#a78bfa"
+                strokeWidth={1.5}
+                fill="none"
+                dot={false}
+                activeDot={{ r: 3 }}
+                yAxisId="latency"
               />
             </AreaChart>
           </ResponsiveContainer>
