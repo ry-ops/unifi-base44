@@ -141,7 +141,7 @@ export default function Dashboard() {
           </h2>
           {(() => {
             const isActive = inspectionState === "on" || ipsMode === "ips" || ipsMode === "ids";
-            const modeLabel = ipsMode === "ips" ? "IPS — Active Prevention" : ipsMode === "ids" ? "IDS — Notify & Block" : ipsMode ? ipsMode.toUpperCase() : "—";
+            const modeLabel = ipsMode === "ips" ? "IPS — Active Prevention" : ipsMode === "ids" ? "IDS — Notify & Block" : ipsMode ? ipsMode.toUpperCase() : "Disabled";
             const color = !isActive ? "text-slate-500" : ipsMode === "ips" ? "text-green-400" : ipsMode === "ids" ? "text-green-400" : "text-slate-500";
             return (
               <>

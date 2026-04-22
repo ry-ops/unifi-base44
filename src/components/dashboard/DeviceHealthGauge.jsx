@@ -37,10 +37,6 @@ function computeHealthScore({ counts, percentages, gateway }) {
     score -= Math.min(10, (txRetry - 10) * 1);
     notes.push(`High TX retry (${txRetry.toFixed(1)}%)`);
   }
-  if (ipsMode === "ids") {
-    score -= 5;
-    notes.push("IDS mode — threats not blocked");
-  }
   if (ipsMode === "" || ipsMode === "disabled") {
     score -= 10;
     notes.push("IPS/IDS disabled");
