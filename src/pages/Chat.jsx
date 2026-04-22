@@ -23,7 +23,7 @@ export default function Chat() {
     const safeCall = (fn) => fn().catch(() => null);
 
     const [alarms, events, devices, clients, ispMetrics, firewallRules, networks, wlans, portForwarding] = await Promise.all([
-      hostId && siteId ? safeCall(() => getSiteAlarms(hostId, siteId)) : Promise.resolve(null),
+      hostId && siteId ? safeCall(() => getSiteAlarms(hostId, siteId, selectedSite.meta?.name || "default")) : Promise.resolve(null),
       hostId && siteId ? safeCall(() => getSiteEvents(hostId, siteId)) : Promise.resolve(null),
       hostId && siteId ? safeCall(() => getSiteDevices(hostId, siteId)) : Promise.resolve(null),
       hostId && siteId ? safeCall(() => getSiteClients(hostId, siteId)) : Promise.resolve(null),

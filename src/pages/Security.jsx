@@ -33,12 +33,15 @@ export default function Security() {
 
     const safe = fn => fn().catch(() => null);
     const siteId = networkSiteId || selectedSite.id;
+    const siteRef = selectedSite.meta?.name || "default";
     const [a, fr] = await Promise.all([
-      safe(() => getSiteAlarms(selectedSite.hostId, siteId)),
+      safe(() => getSiteAlarms(selectedSite.hostId, siteId, siteRef)),
       safe(() => getSiteFirewallRules(selectedSite.hostId, siteId)),
     ]);
     const extract = r => Array.isArray(r?.data?.data) ? r.data.data : Array.isArray(r?.data) ? r.data : [];
-    setAlarms(extract(a));
+    // Legacy proxy returns { data: { meta, data: [...] } }
+    const extractAlarms = r => Array.isArray(r?.data?.data) ? r.data.data : [];
+    setAlarms(extractAlarms(a));
     setFirewallRules(extract(fr));
     setLoading(false);
   };
@@ -168,20 +171,26 @@ export default function Security() {
             </div>
           ) : (
             <div className="divide-y divide-slate-800 max-h-72 overflow-y-auto">
-              {alarms.map((a, i) => (
-                <div key={a.id || i} className="px-5 py-3">
-                  <div className="flex items-start justify-between gap-2 mb-1">
-                    <span className="text-sm text-white">{a.message || a.msg || a.type || "Unknown alarm"}</span>
-                    <AlarmSeverityBadge severity={a.severity} />
-                  </div>
-                  {a.datetime && (
-                    <div className="flex items-center gap-1 text-xs text-slate-500">
-                      <Clock className="w-3 h-3" />
-                      {new Date(a.datetime).toLocaleString()}
+              {alarms.map((a, i) => {
+                // Legacy proxy uses: msg, key, datetime, archived
+                // Network API uses: message, severity, datetime
+                const text = a.message || a.msg || a.type || a.key || "Unknown alarm";
+                const severity = a.severity || (a.archived === false ? "warning" : null);
+                const time = a.datetime ? new Date(a.datetime * (a.datetime < 1e12 ? 1000 : 1)).toLocaleString() : null;
+                return (
+                  <div key={a._id || a.id || i} className="px-5 py-3">
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <span className="text-sm text-white">{text}</span>
+                      <AlarmSeverityBadge severity={severity} />
                     </div>
-                  )}
-                </div>
-              ))}
+                    {time && (
+                      <div className="flex items-center gap-1 text-xs text-slate-500">
+                        <Clock className="w-3 h-3" /> {time}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

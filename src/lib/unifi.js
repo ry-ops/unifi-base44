@@ -118,9 +118,9 @@ export async function getSiteTrafficRoutes(hostId, siteId) {
   return unifiCall("GET", connectorPath(hostId, `sites/${siteId}/traffic-routes`));
 }
 
-/** List alarms on a site via Network API */
-export async function getSiteAlarms(hostId, siteId) {
-  return unifiCall("GET", connectorPath(hostId, `sites/${siteId}/alarms`));
+/** List alarms on a site via the legacy proxy (Network Integration API has no /alarms endpoint) */
+export async function getSiteAlarms(hostId, siteId, siteInternalRef = "default") {
+  return unifiCall("GET", `/v1/connector/consoles/${hostId}/proxy/network/api/s/${siteInternalRef}/rest/alarm`);
 }
 
 /** List events on a site via Network API */
