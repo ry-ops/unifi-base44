@@ -3,6 +3,12 @@ import { useNetwork } from "@/components/layout/AppLayout";
 import { getSiteAlarms, getSiteFirewallRules, getSiteFirewallZones, getNetworkSites } from "@/lib/unifi";
 import { ShieldAlert, Shield, Zap, AlertTriangle, CheckCircle, Globe, Clock, RefreshCw, List } from "lucide-react";
 
+const UPPERCASE_ZONES = ["vpn", "dmz", "wan", "lan", "iot", "vlan"];
+function fmtZone(name) {
+  if (!name) return name;
+  return name.replace(/\b(\w+)\b/g, w => UPPERCASE_ZONES.includes(w.toLowerCase()) ? w.toUpperCase() : w);
+}
+
 function AlarmSeverityBadge({ severity }) {
   const s = (severity || "").toLowerCase();
   if (s === "critical") return <span className="px-2 py-0.5 rounded-full text-xs bg-red-500/20 text-red-400">Critical</span>;
@@ -239,8 +245,8 @@ export default function Security() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-slate-300 text-xs font-mono">{r.protocol || "all"}</td>
-                    <td className="px-4 py-3 text-slate-300 text-xs">{r.sourceAddress || (r.source?.zoneId ? (zoneMap[r.source.zoneId] || r.source.zoneId) : typeof r.source === "string" ? r.source : "any")}</td>
-                    <td className="px-4 py-3 text-slate-300 text-xs">{r.destinationAddress || (r.destination?.zoneId ? (zoneMap[r.destination.zoneId] || r.destination.zoneId) : typeof r.destination === "string" ? r.destination : "any")}</td>
+                    <td className="px-4 py-3 text-slate-300 text-xs">{fmtZone(r.sourceAddress || (r.source?.zoneId ? (zoneMap[r.source.zoneId] || r.source.zoneId) : typeof r.source === "string" ? r.source : "any"))}</td>
+                    <td className="px-4 py-3 text-slate-300 text-xs">{fmtZone(r.destinationAddress || (r.destination?.zoneId ? (zoneMap[r.destination.zoneId] || r.destination.zoneId) : typeof r.destination === "string" ? r.destination : "any"))}</td>
                     <td className="px-4 py-3">
                       <span className={`text-xs px-2 py-0.5 rounded-full ${r.enabled === false ? "bg-slate-700 text-slate-400" : "bg-purple-500/20 text-purple-400"}`}>
                         {r.enabled === false ? "Disabled" : "Active"}
