@@ -173,9 +173,7 @@ export default function Networks() {
                       <div>
                         <div className="text-sm text-white font-medium">{n.name || "—"}</div>
                         <div className="text-xs text-slate-500 font-mono">
-                          {n.subnet || n.networkAddress
-                            ? (n.subnet || n.networkAddress)
-                            : (n.ipSubnet || (n.networkIp && n.prefix ? `${n.networkIp}/${n.prefix}` : null)) || "—"}
+                          {n.subnet || n.networkAddress || n.ipSubnet || (n.vlanId != null ? `VLAN ${n.vlanId}` : "—")}
                         </div>
                       </div>
                     </div>
