@@ -172,7 +172,11 @@ export default function Networks() {
                       <Network className="w-4 h-4 text-cyan-400 flex-shrink-0" />
                       <div>
                         <div className="text-sm text-white font-medium">{n.name || "—"}</div>
-                        <div className="text-xs text-slate-500">{n.subnet || n.networkAddress || "—"}</div>
+                        <div className="text-xs text-slate-500 font-mono">
+                          {n.subnet || n.networkAddress
+                            ? (n.subnet || n.networkAddress)
+                            : (n.ipSubnet || (n.networkIp && n.prefix ? `${n.networkIp}/${n.prefix}` : null)) || "—"}
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
