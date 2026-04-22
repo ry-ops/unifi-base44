@@ -21,13 +21,17 @@ const CustomTooltip = ({ active, payload, label }) => {
   return (
     <div className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs shadow-xl">
       <div className="text-slate-400 mb-1">{label}</div>
-      {payload.map(p => (
-        <div key={p.dataKey} className="flex items-center gap-2">
-          <span style={{ color: p.color }}>●</span>
-          <span className="text-slate-300">{p.name}:</span>
-          <span className="text-white font-mono">{formatMbps(p.value)} Mbps</span>
-        </div>
-      ))}
+      {payload.map(p => {
+        const isLatency = p.dataKey === "latency";
+        const formatted = isLatency ? `${p.value ?? "—"} ms` : `${formatMbps(p.value)} Mbps`;
+        return (
+          <div key={p.dataKey} className="flex items-center gap-2">
+            <span style={{ color: p.color }}>●</span>
+            <span className="text-slate-300">{p.name}:</span>
+            <span className="text-white font-mono">{formatted}</span>
+          </div>
+        );
+      })}
     </div>
   );
 };
@@ -80,8 +84,8 @@ export default function IspMetricsChart() {
       <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800">
         <h2 className="text-sm font-semibold text-white flex items-center gap-2">
           <Activity className="w-4 h-4 text-blue-400" />
-          WAN Throughput
-          <span className="text-xs font-normal text-slate-500">(Mbps)</span>
+          WAN Throughput & Latency
+          <span className="text-xs font-normal text-slate-500">(Mbps / ms)</span>
         </h2>
         <div className="flex items-center gap-2">
           {/* Range selector */}
