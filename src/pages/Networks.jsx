@@ -172,8 +172,13 @@ export default function Networks() {
                       <Network className="w-4 h-4 text-cyan-400 flex-shrink-0" />
                       <div>
                         <div className="text-sm text-white font-medium">{n.name || "—"}</div>
-                        <div className="text-xs text-slate-500 font-mono">
-                          {n.subnet || n.networkAddress || n.ipSubnet || (n.vlanId != null ? `VLAN ${n.vlanId}` : "—")}
+                        <div className="text-xs text-slate-500 font-mono flex items-center gap-1.5">
+                          {n.vlanId != null ? `VLAN ${n.vlanId}` : "—"}
+                          {n.metadata?.origin && (
+                            <span className={`px-1.5 py-0.5 rounded text-xs font-sans ${n.metadata.origin === "SYSTEM_DEFINED" ? "bg-slate-700 text-slate-400" : "bg-blue-500/20 text-blue-400"}`}>
+                              {n.metadata.origin === "SYSTEM_DEFINED" ? "System" : "Custom"}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
