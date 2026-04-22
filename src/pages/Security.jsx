@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNetwork } from "@/components/layout/AppLayout";
-import { getSiteAlarms, getSiteFirewallRules, getNetworkSites } from "@/lib/unifi";
+import { getSiteAlarms, getSiteFirewallRules, getSiteFirewallZones, getNetworkSites } from "@/lib/unifi";
 import { ShieldAlert, Shield, Zap, AlertTriangle, CheckCircle, Globe, Clock, RefreshCw, List } from "lucide-react";
 
 function AlarmSeverityBadge({ severity }) {
@@ -14,6 +14,7 @@ export default function Security() {
   const { selectedSite } = useNetwork();
   const [alarms, setAlarms] = useState([]);
   const [firewallRules, setFirewallRules] = useState([]);
+  const [zoneMap, setZoneMap] = useState({});
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -34,15 +35,20 @@ export default function Security() {
     const safe = fn => fn().catch(() => null);
     const siteId = networkSiteId || selectedSite.id;
     const siteRef = selectedSite.meta?.name || "default";
-    const [a, fr] = await Promise.all([
+    const [a, fr, zones] = await Promise.all([
       safe(() => getSiteAlarms(selectedSite.hostId, siteId, siteRef)),
       safe(() => getSiteFirewallRules(selectedSite.hostId, siteId)),
+      safe(() => getSiteFirewallZones(selectedSite.hostId, siteId)),
     ]);
     const extract = r => Array.isArray(r?.data?.data) ? r.data.data : Array.isArray(r?.data) ? r.data : [];
-    // Legacy proxy returns { data: { meta, data: [...] } }
     const extractAlarms = r => Array.isArray(r?.data?.data) ? r.data.data : [];
     setAlarms(extractAlarms(a));
     setFirewallRules(extract(fr));
+    // Build zoneId -> name lookup
+    const zoneList = extract(zones);
+    const map = {};
+    zoneList.forEach(z => { map[z.id] = z.name; });
+    setZoneMap(map);
     setLoading(false);
   };
 
@@ -233,8 +239,8 @@ export default function Security() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-slate-300 text-xs font-mono">{r.protocol || "all"}</td>
-                    <td className="px-4 py-3 text-slate-400 text-xs">{r.sourceAddress || (typeof r.source === "string" ? r.source : r.source?.zoneId || "any")}</td>
-                    <td className="px-4 py-3 text-slate-400 text-xs">{r.destinationAddress || (typeof r.destination === "string" ? r.destination : r.destination?.zoneId || "any")}</td>
+                    <td className="px-4 py-3 text-slate-300 text-xs">{r.sourceAddress || (r.source?.zoneId ? (zoneMap[r.source.zoneId] || r.source.zoneId) : typeof r.source === "string" ? r.source : "any")}</td>
+                    <td className="px-4 py-3 text-slate-300 text-xs">{r.destinationAddress || (r.destination?.zoneId ? (zoneMap[r.destination.zoneId] || r.destination.zoneId) : typeof r.destination === "string" ? r.destination : "any")}</td>
                     <td className="px-4 py-3">
                       <span className={`text-xs px-2 py-0.5 rounded-full ${r.enabled === false ? "bg-slate-700 text-slate-400" : "bg-purple-500/20 text-purple-400"}`}>
                         {r.enabled === false ? "Disabled" : "Active"}

@@ -108,6 +108,11 @@ export async function getSiteFirewallRules(hostId, siteId) {
   return { data: { data: allRules } };
 }
 
+/** List firewall zones on a site via Network API */
+export async function getSiteFirewallZones(hostId, siteId) {
+  return unifiCall("GET", connectorPath(hostId, `sites/${siteId}/firewall/zones`));
+}
+
 /** List port forwarding rules on a site via Network API */
 export async function getSitePortForwarding(hostId, siteId) {
   return unifiCall("GET", connectorPath(hostId, `sites/${siteId}/port-forwarding`));
