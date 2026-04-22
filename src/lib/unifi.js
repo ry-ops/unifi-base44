@@ -88,9 +88,24 @@ export async function getSiteWlans(hostId, siteId) {
   return unifiCall("GET", connectorPath(hostId, `sites/${siteId}/wlans`));
 }
 
-/** List firewall policies on a site via Network API */
+/** List ALL firewall policies on a site via Network API (paginates through all pages) */
 export async function getSiteFirewallRules(hostId, siteId) {
-  return unifiCall("GET", connectorPath(hostId, `sites/${siteId}/firewall/policies`));
+  const pageSize = 25;
+  let offset = 0;
+  let allRules = [];
+  let totalCount = null;
+
+  do {
+    const result = await unifiCall("GET", connectorPath(hostId, `sites/${siteId}/firewall/policies?limit=${pageSize}&offset=${offset}`));
+    const page = result?.data;
+    const items = Array.isArray(page?.data) ? page.data : [];
+    allRules = allRules.concat(items);
+    if (totalCount === null) totalCount = page?.totalCount ?? items.length;
+    offset += pageSize;
+  } while (allRules.length < totalCount);
+
+  // Return in the same shape the rest of the app expects
+  return { data: { data: allRules } };
 }
 
 /** List port forwarding rules on a site via Network API */

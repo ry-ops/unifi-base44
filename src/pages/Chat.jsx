@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNetwork } from "@/components/layout/AppLayout";
-import { getSiteAlarms, getSiteEvents, getSiteDevices, getSiteClients, getIspMetrics } from "@/lib/unifi";
+import { getSiteAlarms, getSiteEvents, getSiteDevices, getSiteClients, getIspMetrics, getSiteFirewallRules, getSiteNetworks, getSiteWlans, getSitePortForwarding } from "@/lib/unifi";
 import ChatPanel from "@/components/chat/ChatPanel";
 import { MessageSquare } from "lucide-react";
 
@@ -22,12 +22,16 @@ export default function Chat() {
     // Fetch enriched context in parallel; gracefully skip failures
     const safeCall = (fn) => fn().catch(() => null);
 
-    const [alarms, events, devices, clients, ispMetrics] = await Promise.all([
+    const [alarms, events, devices, clients, ispMetrics, firewallRules, networks, wlans, portForwarding] = await Promise.all([
       hostId && siteId ? safeCall(() => getSiteAlarms(hostId, siteId)) : Promise.resolve(null),
       hostId && siteId ? safeCall(() => getSiteEvents(hostId, siteId)) : Promise.resolve(null),
       hostId && siteId ? safeCall(() => getSiteDevices(hostId, siteId)) : Promise.resolve(null),
       hostId && siteId ? safeCall(() => getSiteClients(hostId, siteId)) : Promise.resolve(null),
       safeCall(() => getIspMetrics("5m", { duration: "24h" })),
+      hostId && siteId ? safeCall(() => getSiteFirewallRules(hostId, siteId)) : Promise.resolve(null),
+      hostId && siteId ? safeCall(() => getSiteNetworks(hostId, siteId)) : Promise.resolve(null),
+      hostId && siteId ? safeCall(() => getSiteWlans(hostId, siteId)) : Promise.resolve(null),
+      hostId && siteId ? safeCall(() => getSitePortForwarding(hostId, siteId)) : Promise.resolve(null),
     ]);
 
     const extract = (r) =>
@@ -41,6 +45,10 @@ export default function Chat() {
       devices: extract(devices),
       clients: extract(clients),
       ispMetrics: extract(ispMetrics),
+      firewallRules: extract(firewallRules),
+      networks: extract(networks),
+      wlans: extract(wlans),
+      portForwarding: extract(portForwarding),
       loadedAt: new Date().toISOString(),
     });
     setLoadingContext(false);
@@ -58,7 +66,7 @@ export default function Chat() {
             {loadingContext
               ? "Loading network context..."
               : contextData
-              ? `Context loaded: ${contextData.devices?.length || contextData.statistics?.counts?.totalDevice || 0} devices · ${contextData.clients?.length || (contextData.statistics?.counts?.wifiClient || 0) + (contextData.statistics?.counts?.wiredClient || 0)} clients · ${contextData.alarms?.length || 0} alarms`
+              ? `Context loaded: ${contextData.devices?.length || 0} devices · ${contextData.clients?.length || 0} clients · ${contextData.alarms?.length || 0} alarms · ${contextData.firewallRules?.length || 0} firewall rules · ${contextData.networks?.length || 0} networks`
               : "No site selected"}
           </p>
         </div>
