@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { Send, Bot, User, Loader2, Trash2 } from "lucide-react";
+import { Send, Bot, User, Loader2, Trash2, Check, X, Terminal, AlertTriangle } from "lucide-react";
 
 const STORAGE_KEY = "unifi_chat_history";
 const MAX_STORED = 100;
@@ -18,7 +18,12 @@ function loadHistory() {
 
 function saveHistory(messages) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages.slice(-MAX_STORED)));
+    const serializable = messages.map(m => ({
+      role: m.role,
+      content: m.content,
+      actionResult: m.actionResult || null,
+    }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(serializable.slice(-MAX_STORED)));
   } catch {}
 }
 
@@ -101,21 +106,101 @@ function renderMarkdown(text) {
   return elements;
 }
 
-function MessageBubble({ message }) {
+function parseActionProposals(text) {
+  const proposals = [];
+  const regex = /ACTION_PROPOSAL:\s*(\{[\s\S]*?\})(?=\n|$|ACTION_PROPOSAL:)/g;
+  let match;
+  while ((match = regex.exec(text + "\nACTION_PROPOSAL:")) !== null) {
+    try { proposals.push(JSON.parse(match[1])); } catch {}
+  }
+  return proposals;
+}
+
+function ActionProposalCard({ proposal, onConfirm, onDeny, executed }) {
+  return (
+    <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 w-full max-w-lg mt-2">
+      <div className="flex items-center gap-2 mb-2">
+        <AlertTriangle className="w-4 h-4 text-amber-400" />
+        <span className="text-xs font-semibold text-amber-400 uppercase tracking-wider">Action Proposal</span>
+      </div>
+      <p className="text-sm text-slate-200 mb-1">{proposal.description}</p>
+      {proposal.warning && (
+        <p className="text-xs text-amber-300/70 mb-2">{proposal.warning}</p>
+      )}
+      <div className="flex items-center gap-1.5 text-xs font-mono text-slate-400 mb-3 bg-slate-900/50 rounded p-2 overflow-x-auto">
+        <Terminal className="w-3 h-3 flex-shrink-0" />
+        <span className="text-blue-300">{proposal.method}</span>&nbsp;{proposal.path}
+      </div>
+      {proposal.body && (
+        <pre className="text-xs text-slate-400 bg-slate-900/50 rounded p-2 mb-3 overflow-x-auto max-h-32">
+          {JSON.stringify(proposal.body, null, 2)}
+        </pre>
+      )}
+      {!executed && (
+        <div className="flex gap-2">
+          <button
+            onClick={() => onConfirm(proposal)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-500 rounded-lg text-xs text-white font-medium transition-colors"
+          >
+            <Check className="w-3 h-3" /> Approve & Execute
+          </button>
+          <button
+            onClick={() => onDeny(proposal)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs text-slate-300 font-medium transition-colors"
+          >
+            <X className="w-3 h-3" /> Cancel
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MessageBubble({ message, onConfirm, onDeny, executedProposals }) {
   const isUser = message.role === "user";
+  const proposals = !isUser ? parseActionProposals(message.content) : [];
+  const cleanText = message.content.replace(/ACTION_PROPOSAL:\s*\{[\s\S]*?\}(?=\n|$|ACTION_PROPOSAL:)/g, "").trim();
+
   return (
     <div className={`flex gap-3 ${isUser ? "flex-row-reverse" : ""}`}>
       <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${isUser ? "bg-blue-600" : "bg-slate-700"}`}>
         {isUser ? <User className="w-3.5 h-3.5 text-white" /> : <Bot className="w-3.5 h-3.5 text-blue-400" />}
       </div>
-      <div className={`max-w-[75%] flex flex-col gap-2 ${isUser ? "items-end" : "items-start"}`}>
-        <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
-          isUser
-            ? "bg-blue-600 text-white rounded-tr-sm whitespace-pre-wrap"
-            : "bg-slate-800 rounded-tl-sm border border-slate-700/50"
-        }`}>
-          {isUser ? message.content : renderMarkdown(message.content)}
-        </div>
+      <div className={`max-w-[80%] flex flex-col gap-2 ${isUser ? "items-end" : "items-start"}`}>
+        {cleanText && (
+          <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
+            isUser
+              ? "bg-blue-600 text-white rounded-tr-sm whitespace-pre-wrap"
+              : "bg-slate-800 rounded-tl-sm border border-slate-700/50"
+          }`}>
+            {isUser ? cleanText : renderMarkdown(cleanText)}
+          </div>
+        )}
+
+        {proposals.map((proposal, idx) => (
+          <ActionProposalCard
+            key={idx}
+            proposal={proposal}
+            onConfirm={onConfirm}
+            onDeny={onDeny}
+            executed={executedProposals?.has(JSON.stringify(proposal))}
+          />
+        ))}
+
+        {message.actionResult && (
+          <div className={`text-xs px-3 py-2 rounded-lg border font-mono ${
+            message.actionResult.ok
+              ? "bg-green-500/10 border-green-500/30 text-green-400"
+              : "bg-red-500/10 border-red-500/30 text-red-400"
+          }`}>
+            {message.actionResult.ok ? "✓ Executed successfully" : "✗ Execution failed"} — HTTP {message.actionResult.status}
+            {message.actionResult.data && (
+              <pre className="mt-1 text-slate-400 whitespace-pre-wrap max-h-40 overflow-auto">
+                {JSON.stringify(message.actionResult.data, null, 2)}
+              </pre>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -123,13 +208,14 @@ function MessageBubble({ message }) {
 
 const WELCOME_MSG = {
   role: "assistant",
-  content: "Hi! I'm your UniFi AI assistant. I can help you analyze and understand your network data. I answer questions based on the context loaded from your dashboard — I can't make live API calls or execute changes directly. For live queries or configuration changes, use the **API Terminal** page.\n\nWhat would you like to know?",
+  content: "Hi! I'm your UniFi AI assistant. I can help you monitor your network and make configuration changes.\n\n**How it works:** I generate action proposals → you click **Approve & Execute** → the backend makes the real API call to UniFi → I summarize the response.\n\nWhat would you like to do?",
 };
 
 export default function ChatPanel({ contextData }) {
   const [messages, setMessages] = useState(() => loadHistory() || [WELCOME_MSG]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [executedProposals] = useState(() => new Set());
   const bottomRef = useRef(null);
 
   useEffect(() => { saveHistory(messages); }, [messages]);
@@ -158,10 +244,58 @@ export default function ChatPanel({ contextData }) {
     setLoading(false);
   };
 
+  const handleConfirmAction = async (proposal) => {
+    executedProposals.add(JSON.stringify(proposal));
+    setLoading(true);
+
+    const response = await base44.functions.invoke("unifiChat", {
+      messages: [],
+      contextData,
+      pendingAction: proposal,
+    });
+    const result = response.data?.actionResult;
+
+    // Feed the result back to the AI to summarize
+    const resultContent = `Action executed: ${proposal.description}\nHTTP ${result?.status}\nResponse:\n${JSON.stringify(result?.data, null, 2)}`;
+    const followUpMessages = [
+      ...messages,
+      { role: "user", content: resultContent }
+    ];
+
+    const summaryRes = await base44.functions.invoke("unifiChat", {
+      messages: followUpMessages,
+      contextData,
+    });
+    const summaryReply = summaryRes.data?.reply || (result?.ok ? "Action completed successfully." : `Action failed (HTTP ${result?.status}).`);
+
+    setMessages(prev => [...prev, {
+      role: "assistant",
+      content: summaryReply,
+      actionResult: result,
+    }]);
+    setLoading(false);
+  };
+
+  const handleDenyAction = (proposal) => {
+    executedProposals.add(JSON.stringify(proposal));
+    setMessages(prev => [...prev, {
+      role: "assistant",
+      content: "Action cancelled. Let me know if you'd like to proceed differently.",
+    }]);
+  };
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4 min-h-0">
-        {messages.map((msg, i) => <MessageBubble key={i} message={msg} />)}
+        {messages.map((msg, i) => (
+          <MessageBubble
+            key={i}
+            message={msg}
+            onConfirm={handleConfirmAction}
+            onDeny={handleDenyAction}
+            executedProposals={executedProposals}
+          />
+        ))}
         {loading && (
           <div className="flex gap-3">
             <div className="w-7 h-7 rounded-full bg-slate-700 flex items-center justify-center flex-shrink-0">
@@ -180,7 +314,6 @@ export default function ChatPanel({ contextData }) {
             onClick={clearHistory}
             disabled={loading}
             className="flex items-center gap-1 text-xs text-slate-600 hover:text-slate-400 transition-colors disabled:opacity-30"
-            title="Clear conversation history"
           >
             <Trash2 className="w-3 h-3" /> Clear history
           </button>
@@ -191,7 +324,7 @@ export default function ChatPanel({ contextData }) {
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage()}
-            placeholder="Ask about your network..."
+            placeholder="Ask about your network or request a change..."
             className="flex-1 bg-slate-800/70 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500/50 transition-colors"
           />
           <button
