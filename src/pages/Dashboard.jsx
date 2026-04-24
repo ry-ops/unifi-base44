@@ -8,6 +8,7 @@ import DeviceTypeBreakdown from "@/components/dashboard/DeviceTypeBreakdown";
 import { Server, Users, Wifi, AlertTriangle, Activity, CheckCircle, XCircle, Shield, Router, Globe, Zap, Network, Lock, TrendingUp, MonitorCheck, WifiOff } from "lucide-react";
 import { Link } from "react-router-dom";
 import RecentEventsFeed from "@/components/dashboard/RecentEventsFeed";
+import WanUptimeCard from "@/components/dashboard/WanUptimeCard";
 
 export default function Dashboard() {
   const { selectedSite } = useNetwork();
@@ -86,31 +87,7 @@ export default function Dashboard() {
       {/* ── Primary health indicators — front and center ── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         {/* WAN Uptime — wanUptime from API is % downtime (0 = fully up) */}
-        <div className="bg-slate-900 rounded-xl border border-slate-800 p-4">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-sm font-semibold text-white flex items-center gap-2">
-              <Globe className="w-4 h-4 text-orange-400" /> WAN Uptime
-            </h2>
-            {internetIssues.length > 0 && (
-              <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400">{internetIssues.length} issue(s)</span>
-            )}
-          </div>
-          {(() => {
-            const uptimePct = wanUptime != null ? 100 - wanUptime : null;
-            const color = uptimePct == null ? "text-slate-500" : uptimePct >= 99 ? "text-green-400" : uptimePct >= 95 ? "text-yellow-400" : "text-red-400";
-            const barColor = uptimePct == null ? "bg-slate-700" : uptimePct >= 99 ? "bg-green-500" : uptimePct >= 95 ? "bg-yellow-500" : "bg-red-500";
-            return (
-              <>
-                <div className={`text-2xl sm:text-3xl font-bold ${color}`}>
-                  {uptimePct != null ? `${uptimePct.toFixed(2)}%` : "—"}
-                </div>
-                <div className="mt-2 h-2 rounded-full bg-slate-800 overflow-hidden">
-                  <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: uptimePct != null ? `${Math.min(uptimePct, 100)}%` : "0%" }} />
-                </div>
-              </>
-            );
-          })()}
-        </div>
+        <WanUptimeCard wanUptime={wanUptime} internetIssues={internetIssues} />
 
         {/* TX Retry Rate */}
         <div className="bg-slate-900 rounded-xl border border-slate-800 p-4">
