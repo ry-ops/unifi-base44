@@ -83,17 +83,7 @@ export default function Dashboard() {
         <StatCard title="Critical Alerts" value={counts.criticalNotification || 0} icon={AlertTriangle} color={counts.criticalNotification > 0 ? "red" : "green"} />
       </div>
 
-      {/* ── Grafana-style telemetry panels ── */}
-      <IspMetricsChart />
-
-      {/* Health + Client + Device type panels */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-        <DeviceHealthGauge statistics={selectedSite.statistics} />
-        <ClientDonutChart counts={counts} />
-        <DeviceTypeBreakdown counts={counts} />
-      </div>
-
-      {/* Health indicators — stacked on mobile, 3-col on md */}
+      {/* ── Primary health indicators — front and center ── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         {/* WAN Uptime — wanUptime from API is % downtime (0 = fully up) */}
         <div className="bg-slate-900 rounded-xl border border-slate-800 p-4">
@@ -157,6 +147,16 @@ export default function Dashboard() {
             );
           })()}
         </div>
+      </div>
+
+      {/* ── Telemetry chart ── */}
+      <IspMetricsChart />
+
+      {/* Health + Client + Device type panels */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        <DeviceHealthGauge statistics={selectedSite.statistics} />
+        <ClientDonutChart counts={counts} />
+        <DeviceTypeBreakdown counts={counts} />
       </div>
 
       {/* Gateway + Network Summary */}

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Server, Users, Wifi, ShieldAlert, Terminal, MessageSquare, ChevronDown, ChevronRight, X } from "lucide-react";
+import { LayoutDashboard, Server, Users, Wifi, ShieldAlert, Terminal, MessageSquare, ChevronDown, ChevronRight, X, Settings } from "lucide-react";
 
 const navItems = [
   { path: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -9,6 +9,7 @@ const navItems = [
   { path: "/networks", label: "Networks", icon: Wifi },
   { path: "/security", label: "Security", icon: ShieldAlert },
   { path: "/terminal", label: "API Terminal", icon: Terminal },
+  { path: "/settings", label: "Settings", icon: Settings },
 ];
 
 export default function Sidebar({ sites = [], selectedSite, onSiteChange, mobileOpen, onMobileClose }) {

@@ -14,6 +14,7 @@ import Networks from '@/pages/Networks';
 import Security from '@/pages/Security';
 import Terminal from '@/pages/Terminal';
 import Chat from '@/pages/Chat';
+import Settings from '@/pages/Settings';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -46,6 +47,7 @@ const AuthenticatedApp = () => {
         <Route path="/security" element={<Security />} />
         <Route path="/terminal" element={<Terminal />} />
         <Route path="/chat" element={<Chat />} />
+        <Route path="/settings" element={<Settings />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
