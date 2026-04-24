@@ -54,7 +54,7 @@ export default function WanUptimeCard({ wanUptime, internetIssues = [] }) {
                 lines.push(`${label}: ${v}`);
               });
             }
-            const summary = lines.length > 0 ? lines.join(" · ") : "WAN issue detected (no details)";
+            const summary = lines.length > 0 ? lines.join(" · ") : `WAN connectivity event #${issue.index ?? "unknown"}`;
             return (
               <div key={i} className="rounded-lg bg-yellow-500/10 border border-yellow-500/20 p-3">
                 <div className="flex items-start gap-2">
