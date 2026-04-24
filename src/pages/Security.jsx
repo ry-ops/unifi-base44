@@ -203,57 +203,7 @@ export default function Security() {
         </div>
       </div>
 
-      {/* Firewall Rules — Network API */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-        <div className="px-5 py-3 border-b border-slate-800 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-white flex items-center gap-2">
-            <Shield className="w-4 h-4 text-purple-400" /> Firewall Rules (Network API)
-          </h2>
-          {firewallRules.length > 0 && <span className="text-xs text-slate-500">{firewallRules.length} rules · {activeRules.length} active</span>}
-        </div>
-        {loading ? (
-          <div className="flex items-center justify-center py-8 gap-2 text-slate-500 text-sm">
-            <RefreshCw className="w-4 h-4 animate-spin" /> Loading...
-          </div>
-        ) : !firewallRules.length ? (
-          <div className="text-center py-8 text-slate-500 text-sm">No firewall rules from Network API</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-800 bg-slate-800/50">
-                  <th className="text-left px-4 py-3 text-slate-400 font-medium">Name</th>
-                  <th className="text-left px-4 py-3 text-slate-400 font-medium">Action</th>
-                  <th className="text-left px-4 py-3 text-slate-400 font-medium">Protocol</th>
-                  <th className="text-left px-4 py-3 text-slate-400 font-medium">Source</th>
-                  <th className="text-left px-4 py-3 text-slate-400 font-medium">Destination</th>
-                  <th className="text-left px-4 py-3 text-slate-400 font-medium">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {firewallRules.map((r, i) => (
-                  <tr key={r.id || i} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
-                    <td className="px-4 py-3 text-white font-medium">{r.name || `Rule ${i + 1}`}</td>
-                    <td className="px-4 py-3">
-                      <span className={`text-xs px-2 py-0.5 rounded font-mono ${(r.action?.type || "").toLowerCase() === "allow" ? "bg-green-500/20 text-green-400" : (r.action?.type || "").toLowerCase() === "block" ? "bg-red-500/20 text-red-400" : "bg-slate-700 text-slate-300"}`}>
-                        {r.action?.type || "—"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-slate-300 text-xs font-mono">{r.protocol || "all"}</td>
-                    <td className="px-4 py-3 text-slate-300 text-xs">{fmtZone(r.sourceAddress || (r.source?.zoneId ? (zoneMap[r.source.zoneId] || r.source.zoneId) : typeof r.source === "string" ? r.source : "any"))}</td>
-                    <td className="px-4 py-3 text-slate-300 text-xs">{fmtZone(r.destinationAddress || (r.destination?.zoneId ? (zoneMap[r.destination.zoneId] || r.destination.zoneId) : typeof r.destination === "string" ? r.destination : "any"))}</td>
-                    <td className="px-4 py-3">
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${r.enabled === false ? "bg-slate-700 text-slate-400" : "bg-purple-500/20 text-purple-400"}`}>
-                        {r.enabled === false ? "Disabled" : "Active"}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+
 
       {/* Internet issues — Site Manager */}
       {internetIssues.length > 0 && (
