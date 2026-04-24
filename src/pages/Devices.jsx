@@ -116,7 +116,7 @@ export default function Devices() {
                     <th className="text-left px-4 py-3 text-slate-400 font-medium">Model</th>
                     <th className="text-left px-4 py-3 text-slate-400 font-medium">IP</th>
                     <th className="text-left px-4 py-3 text-slate-400 font-medium">Status</th>
-                    <th className="text-left px-4 py-3 text-slate-400 font-medium">Uptime</th>
+
                     <th className="px-4 py-3"></th>
                   </tr>
                 </thead>
@@ -143,7 +143,7 @@ export default function Devices() {
                           {d.state || d.status || "Online"}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-slate-400 text-xs">{formatUptime(d.uptime ?? d.uptimeSecs ?? d.uptimeSeconds ?? d.uptime_secs)}</td>
+
                       <td className="px-4 py-3">
                         <ChevronRight className={`w-4 h-4 text-slate-600 transition-transform ${selected?.id === d.id ? "rotate-90 text-blue-400" : ""}`} />
                       </td>
@@ -169,7 +169,7 @@ export default function Devices() {
                 <DetailRow label="Model" value={selected.model || selected.shortname} />
                 <DetailRow label="IP Address" value={selected.ip || selected.ipAddress} />
                 <DetailRow label="State" value={selected.state || selected.status} />
-                <DetailRow label="Uptime" value={formatUptime(selected.uptime ?? selected.uptimeSecs ?? selected.uptimeSeconds ?? selected.uptime_secs)} />
+                <DetailRow label="Uptime" value={formatUptime(selected.uptime || selected.uptimeSecs || selected.uptimeSeconds)} />
                 <DetailRow label="Firmware" value={selected.version || selected.firmwareVersion} />
                 <DetailRow label="Serial" value={selected.serial} />
                 <DetailRow label="Type" value={selected.type} />
