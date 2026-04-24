@@ -38,27 +38,31 @@ export default function WanUptimeCard({ wanUptime, internetIssues = [] }) {
       {expanded && internetIssues.length > 0 && (
         <div className="mt-3 flex flex-col gap-2">
           <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Issues</div>
-          {internetIssues.map((issue, i) => (
-            <div key={i} className="rounded-lg bg-yellow-500/10 border border-yellow-500/20 p-3">
-              <div className="flex items-start gap-2">
-                <AlertTriangle className="w-3.5 h-3.5 text-yellow-400 flex-shrink-0 mt-0.5" />
-                <div>
-                  <div className="text-xs text-yellow-300 font-medium">
-                    {issue.type || issue.message || JSON.stringify(issue)}
+          {internetIssues.map((issue, i) => {
+            const lines = [];
+            if (issue.highLatency) lines.push(`High latency detected — avg ${issue.latencyAvgMs}ms, max ${issue.latencyMaxMs}ms`);
+            if (issue.packetLoss) lines.push(`Packet loss detected`);
+            if (issue.type) lines.push(issue.type);
+            if (issue.message) lines.push(issue.message);
+            if (issue.description) lines.push(issue.description);
+            const summary = lines.length > 0 ? lines.join(" · ") : "WAN issue detected";
+            return (
+              <div key={i} className="rounded-lg bg-yellow-500/10 border border-yellow-500/20 p-3">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="w-3.5 h-3.5 text-yellow-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <div className="text-xs text-yellow-300 font-medium">{summary}</div>
+                    {issue.datetime && (
+                      <div className="flex items-center gap-1 mt-1 text-xs text-yellow-500/70">
+                        <Clock className="w-3 h-3" />
+                        {new Date(issue.datetime).toLocaleString()}
+                      </div>
+                    )}
                   </div>
-                  {issue.datetime && (
-                    <div className="flex items-center gap-1 mt-1 text-xs text-yellow-500/70">
-                      <Clock className="w-3 h-3" />
-                      {new Date(issue.datetime).toLocaleString()}
-                    </div>
-                  )}
-                  {issue.description && (
-                    <div className="text-xs text-yellow-400/70 mt-0.5">{issue.description}</div>
-                  )}
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
