@@ -45,7 +45,16 @@ export default function WanUptimeCard({ wanUptime, internetIssues = [] }) {
             if (issue.type) lines.push(issue.type);
             if (issue.message) lines.push(issue.message);
             if (issue.description) lines.push(issue.description);
-            const summary = lines.length > 0 ? lines.join(" · ") : "WAN issue detected";
+            if (lines.length === 0) {
+              // Fallback: render all non-index fields as readable key: value pairs
+              const skip = new Set(["index"]);
+              Object.entries(issue).forEach(([k, v]) => {
+                if (skip.has(k) || v === false || v == null) return;
+                const label = k.replace(/([A-Z])/g, " $1").replace(/^./, s => s.toUpperCase());
+                lines.push(`${label}: ${v}`);
+              });
+            }
+            const summary = lines.length > 0 ? lines.join(" · ") : "WAN issue detected (no details)";
             return (
               <div key={i} className="rounded-lg bg-yellow-500/10 border border-yellow-500/20 p-3">
                 <div className="flex items-start gap-2">
