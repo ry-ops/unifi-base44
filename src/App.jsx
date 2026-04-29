@@ -16,6 +16,7 @@ import Terminal from '@/pages/Terminal';
 import Chat from '@/pages/Chat';
 import Settings from '@/pages/Settings';
 import WiFi from '@/pages/WiFi';
+import Gateway from '@/pages/Gateway';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -46,6 +47,7 @@ const AuthenticatedApp = () => {
         <Route path="/clients" element={<Clients />} />
         <Route path="/networks" element={<Networks />} />
         <Route path="/wifi" element={<WiFi />} />
+        <Route path="/gateway" element={<Gateway />} />
         <Route path="/security" element={<Security />} />
         <Route path="/terminal" element={<Terminal />} />
         <Route path="/chat" element={<Chat />} />

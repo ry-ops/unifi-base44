@@ -1,18 +1,27 @@
 import React, { useState, useEffect } from "react";
 import { useNetwork } from "@/components/layout/AppLayout";
-import { getSiteClients, getNetworkSites, formatBytes } from "@/lib/unifi";
-import { Users, Wifi, Activity, UserCheck, RefreshCw, Search, Monitor, Smartphone } from "lucide-react";
+import { getSiteClients, getNetworkSites, unifiCall, formatBytes } from "@/lib/unifi";
+import { Users, Wifi, Activity, UserCheck, RefreshCw, Search, Monitor, Clock, History } from "lucide-react";
 
 function connectionIcon(client) {
-  if (client.type === "WIRELESS") {
-    return <Wifi className="w-3.5 h-3.5 text-blue-400" />;
-  }
+  if (client.type === "WIRELESS") return <Wifi className="w-3.5 h-3.5 text-blue-400" />;
   return <Activity className="w-3.5 h-3.5 text-green-400" />;
+}
+
+function timeAgo(ts) {
+  if (!ts) return "—";
+  const secs = Math.floor(Date.now() / 1000) - ts;
+  if (secs < 60) return "just now";
+  if (secs < 3600) return `${Math.floor(secs / 60)}m ago`;
+  if (secs < 86400) return `${Math.floor(secs / 3600)}h ago`;
+  return `${Math.floor(secs / 86400)}d ago`;
 }
 
 export default function Clients() {
   const { selectedSite } = useNetwork();
+  const [tab, setTab] = useState("live");
   const [clients, setClients] = useState([]);
+  const [knownDevices, setKnownDevices] = useState([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [error, setError] = useState(null);
@@ -25,7 +34,6 @@ export default function Clients() {
     setLoading(true);
     setError(null);
 
-    // Resolve networkSiteId if not already attached
     let networkSiteId = selectedSite.networkSiteId;
     if (!networkSiteId && selectedSite.hostId) {
       const nsResult = await getNetworkSites(selectedSite.hostId).catch(() => null);
@@ -34,10 +42,18 @@ export default function Clients() {
       networkSiteId = match?.id || null;
     }
 
-    const result = await getSiteClients(selectedSite.hostId, networkSiteId || selectedSite.id).catch(e => { setError(e?.message || "Failed"); return null; });
-    const list = Array.isArray(result?.data?.data) ? result.data.data
-      : Array.isArray(result?.data) ? result.data : [];
-    setClients(list);
+    const siteRef = selectedSite?.meta?.name || "default";
+    const [liveResult, knownResult] = await Promise.all([
+      getSiteClients(selectedSite.hostId, networkSiteId || selectedSite.id).catch(() => null),
+      unifiCall("GET", `/v1/connector/consoles/${selectedSite.hostId}/proxy/network/api/s/${siteRef}/rest/user`).catch(() => null),
+    ]);
+
+    const liveList = Array.isArray(liveResult?.data?.data) ? liveResult.data.data
+      : Array.isArray(liveResult?.data) ? liveResult.data : [];
+    setClients(liveList);
+
+    const knownList = Array.isArray(knownResult?.data?.data) ? knownResult.data.data : [];
+    setKnownDevices(knownList);
     setLoading(false);
   };
 
@@ -55,12 +71,22 @@ export default function Clients() {
   const wifiPct = totalClients ? Math.round((wifiCount / totalClients) * 100) : 0;
   const wiredPct = totalClients ? Math.round((wiredCount / totalClients) * 100) : 0;
 
-  const filtered = clients.filter(c => {
+  const filteredLive = clients.filter(c => {
     if (!search) return true;
     const q = search.toLowerCase();
     return (c.name || c.hostname || "").toLowerCase().includes(q)
       || (c.macAddress || c.mac || "").toLowerCase().includes(q)
       || (c.ipAddress || c.ip || "").includes(q);
+  });
+
+  const filteredKnown = knownDevices.filter(c => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (c.hostname || c.name || "").toLowerCase().includes(q)
+      || (c.mac || "").toLowerCase().includes(q)
+      || (c.last_ip || "").includes(q)
+      || (c.oui || "").toLowerCase().includes(q)
+      || (c.last_connection_network_name || "").toLowerCase().includes(q);
   });
 
   return (
@@ -70,7 +96,7 @@ export default function Clients() {
           <h1 className="text-xl font-bold text-white flex items-center gap-2">
             <Users className="w-5 h-5 text-cyan-400" /> Clients
           </h1>
-          <p className="text-sm text-slate-500 mt-0.5">{totalClients} connected · {selectedSite.name}</p>
+          <p className="text-sm text-slate-500 mt-0.5">{totalClients} connected · {knownDevices.length} known · {selectedSite.name}</p>
         </div>
         <button onClick={load} disabled={loading} className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-white transition-colors">
           <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} /> Refresh
@@ -118,85 +144,143 @@ export default function Clients() {
         </div>
       </div>
 
-      {/* Live client table — Network API */}
+      {/* Tabs */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-        <div className="px-4 py-3 border-b border-slate-800 flex items-center justify-between gap-3">
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Network API — Live Clients</span>
-          <div className="relative flex-1 max-w-xs">
+        <div className="border-b border-slate-800 flex items-center justify-between px-4 py-3 gap-3 flex-wrap">
+          <div className="flex rounded-lg overflow-hidden border border-slate-700">
+            <button
+              onClick={() => { setTab("live"); setSearch(""); }}
+              className={`px-4 py-1.5 text-xs font-medium transition-colors flex items-center gap-1.5 ${tab === "live" ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-400 hover:text-white"}`}
+            >
+              <Monitor className="w-3.5 h-3.5" /> Live Clients
+            </button>
+            <button
+              onClick={() => { setTab("known"); setSearch(""); }}
+              className={`px-4 py-1.5 text-xs font-medium transition-colors flex items-center gap-1.5 ${tab === "known" ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-400 hover:text-white"}`}
+            >
+              <History className="w-3.5 h-3.5" /> Known Devices ({knownDevices.length})
+            </button>
+          </div>
+          <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search name, IP, MAC..."
-              className="w-full pl-8 pr-3 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-xs text-white placeholder-slate-500 outline-none focus:border-blue-500/50"
+              className="pl-8 pr-3 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-xs text-white placeholder-slate-500 outline-none focus:border-blue-500/50 w-56"
             />
           </div>
         </div>
 
         {loading ? (
           <div className="flex items-center justify-center py-12 gap-2 text-slate-500 text-sm">
-            <RefreshCw className="w-4 h-4 animate-spin" /> Loading clients...
+            <RefreshCw className="w-4 h-4 animate-spin" /> Loading...
           </div>
-        ) : error ? (
-          <div className="text-center py-10 text-sm text-red-400">{error}</div>
-        ) : !clients.length ? (
-          <div className="text-center py-12 text-slate-500 text-sm">
-            <Users className="w-8 h-8 mx-auto mb-3 opacity-30" />
-            <p>No client data from Network API</p>
-            <p className="text-xs mt-1 text-slate-600">Requires Cloud Gateway with UniFi OS 4.1.9+</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-800 bg-slate-800/50">
-                  <th className="text-left px-4 py-3 text-slate-400 font-medium">Client</th>
-                  <th className="text-left px-4 py-3 text-slate-400 font-medium">IP</th>
-                  <th className="text-left px-4 py-3 text-slate-400 font-medium">Connection</th>
-                  <th className="text-left px-4 py-3 text-slate-400 font-medium">Network</th>
-                  <th className="text-left px-4 py-3 text-slate-400 font-medium">Signal</th>
-                  <th className="text-left px-4 py-3 text-slate-400 font-medium">Connected At</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((c, i) => (
-                  <tr key={c.id || c.macAddress || i} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <Monitor className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
-                        <div>
-                          <div className="text-white text-sm font-medium">{c.name || c.hostname || "Unknown"}</div>
-                          {(c.macAddress || c.mac) && <div className="text-xs text-slate-500 font-mono">{c.macAddress || c.mac}</div>}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-slate-300 font-mono text-xs">{c.ipAddress || c.ip || "—"}</td>
-                    <td className="px-4 py-3">
-                      <span className="flex items-center gap-1.5 text-xs">
-                        {connectionIcon(c)}
-                        <span className="text-slate-300">{c.type || "—"}</span>
-                        {(c.isGuest || c.access?.type === "GUEST") && <span className="ml-1 px-1.5 py-0.5 rounded text-xs bg-yellow-500/20 text-yellow-400">Guest</span>}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-slate-400 text-xs">{c.networkName || c.wlanName || c.uplinkDeviceId?.slice(0, 8) || "—"}</td>
-                    <td className="px-4 py-3 text-xs">
-                      {c.signal != null ? (
-                        <span className={c.signal > -60 ? "text-green-400" : c.signal > -75 ? "text-yellow-400" : "text-red-400"}>
-                          {c.signal} dBm
-                        </span>
-                      ) : <span className="text-slate-600">—</span>}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-slate-400">
-                      {c.connectedAt ? new Date(c.connectedAt).toLocaleString() : "—"}
-                    </td>
+        ) : tab === "live" ? (
+          !clients.length ? (
+            <div className="text-center py-12 text-slate-500 text-sm">
+              <Users className="w-8 h-8 mx-auto mb-3 opacity-30" />
+              <p>No client data from Network API</p>
+              <p className="text-xs mt-1 text-slate-600">Requires Cloud Gateway with UniFi OS 4.1.9+</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-800 bg-slate-800/50">
+                    <th className="text-left px-4 py-3 text-slate-400 font-medium">Client</th>
+                    <th className="text-left px-4 py-3 text-slate-400 font-medium">IP</th>
+                    <th className="text-left px-4 py-3 text-slate-400 font-medium">Connection</th>
+                    <th className="text-left px-4 py-3 text-slate-400 font-medium">Network</th>
+                    <th className="text-left px-4 py-3 text-slate-400 font-medium">Signal</th>
+                    <th className="text-left px-4 py-3 text-slate-400 font-medium">Connected At</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-            {filtered.length === 0 && search && (
-              <div className="text-center py-8 text-slate-500 text-sm">No clients match "{search}"</div>
-            )}
-          </div>
+                </thead>
+                <tbody>
+                  {filteredLive.map((c, i) => (
+                    <tr key={c.id || c.macAddress || i} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <Monitor className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
+                          <div>
+                            <div className="text-white text-sm font-medium">{c.name || c.hostname || "Unknown"}</div>
+                            {(c.macAddress || c.mac) && <div className="text-xs text-slate-500 font-mono">{c.macAddress || c.mac}</div>}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-slate-300 font-mono text-xs">{c.ipAddress || c.ip || "—"}</td>
+                      <td className="px-4 py-3">
+                        <span className="flex items-center gap-1.5 text-xs">
+                          {connectionIcon(c)}
+                          <span className="text-slate-300">{c.type || "—"}</span>
+                          {(c.isGuest || c.access?.type === "GUEST") && <span className="ml-1 px-1.5 py-0.5 rounded text-xs bg-yellow-500/20 text-yellow-400">Guest</span>}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-slate-400 text-xs">{c.networkName || c.wlanName || "—"}</td>
+                      <td className="px-4 py-3 text-xs">
+                        {c.signal != null ? (
+                          <span className={c.signal > -60 ? "text-green-400" : c.signal > -75 ? "text-yellow-400" : "text-red-400"}>
+                            {c.signal} dBm
+                          </span>
+                        ) : <span className="text-slate-600">—</span>}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-slate-400">
+                        {c.connectedAt ? new Date(c.connectedAt).toLocaleString() : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                  {filteredLive.length === 0 && search && (
+                    <tr><td colSpan={6} className="text-center py-8 text-slate-500 text-sm">No clients match "{search}"</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )
+        ) : (
+          /* Known Devices tab */
+          !knownDevices.length ? (
+            <div className="text-center py-12 text-slate-500 text-sm">
+              <History className="w-8 h-8 mx-auto mb-3 opacity-30" />
+              <p>No known device history available</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-800 bg-slate-800/50">
+                    <th className="text-left px-4 py-3 text-slate-400 font-medium">Device</th>
+                    <th className="text-left px-4 py-3 text-slate-400 font-medium">Manufacturer</th>
+                    <th className="text-left px-4 py-3 text-slate-400 font-medium">Last IP</th>
+                    <th className="text-left px-4 py-3 text-slate-400 font-medium">Last Network</th>
+                    <th className="text-left px-4 py-3 text-slate-400 font-medium">Last AP</th>
+                    <th className="text-left px-4 py-3 text-slate-400 font-medium">Last Seen</th>
+                    <th className="text-left px-4 py-3 text-slate-400 font-medium">First Seen</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredKnown.map((d, i) => (
+                    <tr key={d._id || d.mac || i} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
+                      <td className="px-4 py-3">
+                        <div className="text-white font-medium">{d.hostname || d.name || "Unknown"}</div>
+                        <div className="text-xs text-slate-500 font-mono">{d.mac}</div>
+                      </td>
+                      <td className="px-4 py-3 text-slate-400 text-xs">{d.oui || "—"}</td>
+                      <td className="px-4 py-3 text-slate-300 font-mono text-xs">{d.last_ip || "—"}</td>
+                      <td className="px-4 py-3 text-slate-400 text-xs">{d.last_connection_network_name || "—"}</td>
+                      <td className="px-4 py-3 text-slate-400 text-xs">{d.last_uplink_name || "—"}</td>
+                      <td className="px-4 py-3 text-xs text-slate-400">{timeAgo(d.last_seen)}</td>
+                      <td className="px-4 py-3 text-xs text-slate-500">
+                        {d.first_seen ? new Date(d.first_seen * 1000).toLocaleDateString() : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                  {filteredKnown.length === 0 && search && (
+                    <tr><td colSpan={7} className="text-center py-8 text-slate-500 text-sm">No devices match "{search}"</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )
         )}
       </div>
     </div>

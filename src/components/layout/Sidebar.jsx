@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Server, Users, Wifi, ShieldAlert, Terminal, MessageSquare, ChevronDown, ChevronRight, X, Settings, Radio } from "lucide-react";
+import { LayoutDashboard, Server, Users, Wifi, ShieldAlert, Terminal, MessageSquare, ChevronDown, ChevronRight, X, Settings, Radio, Router } from "lucide-react";
 
 const navItems = [
   { path: "/", label: "Dashboard", icon: LayoutDashboard },
   { path: "/devices", label: "Devices", icon: Server },
   { path: "/clients", label: "Clients", icon: Users },
   { path: "/networks", label: "Networks", icon: Wifi },
+  { path: "/gateway", label: "Gateway", icon: Router },
   { path: "/wifi", label: "WiFi", icon: Radio },
   { path: "/security", label: "Security", icon: ShieldAlert },
   { path: "/terminal", label: "API Terminal", icon: Terminal },
