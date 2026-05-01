@@ -219,39 +219,88 @@ export default function Gateway() {
 
           {/* System info */}
           {sysinfo && (
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
-              <h2 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-                <Router className="w-4 h-4 text-green-400" /> System Info
-              </h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {[
-                  { label: "Hostname", value: sysinfo.hostname },
-                  { label: "Model", value: sysinfo.ubnt_device_type },
-                  { label: "Controller Version", value: sysinfo.version },
-                  { label: "Firmware", value: sysinfo.udm_version?.split(".").slice(0, 3).join(".") },
-                  { label: "ISP", value: wan.isp_name },
-                  { label: "ISP Organization", value: wan.isp_organization },
-                  { label: "ASN", value: wan.asn ? `AS${wan.asn}` : null },
-                  { label: "Netmask", value: wan.netmask },
-                ].filter(i => i.value).map(item => (
-                  <div key={item.label}>
-                    <div className="text-xs text-slate-500 mb-0.5">{item.label}</div>
-                    <div className="text-sm font-medium text-white break-all">{item.value}</div>
-                  </div>
-                ))}
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col gap-6">
+
+              {/* System Information */}
+              <div>
+                <h2 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                  <Router className="w-4 h-4 text-green-400" /> System Information
+                </h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {[
+                    { label: "Hostname", value: sysinfo.hostname },
+                    { label: "Model", value: sysinfo.ubnt_device_type },
+                    { label: "Controller Version", value: sysinfo.version },
+                    { label: "Firmware", value: sysinfo.udm_version?.split(".").slice(0, 3).join(".") },
+                  ].filter(i => i.value).map(item => (
+                    <div key={item.label}>
+                      <div className="text-xs text-slate-500 mb-0.5">{item.label}</div>
+                      <div className="text-sm font-medium text-white break-all">{item.value}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              {/* IP addresses */}
-              {sysinfo.ip_addrs?.length > 0 && (
-                <div className="mt-4 pt-4 border-t border-slate-800">
-                  <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Local IP Addresses</div>
-                  <div className="flex flex-wrap gap-2">
-                    {sysinfo.ip_addrs.map((ip, i) => (
-                      <span key={i} className="text-xs font-mono px-2 py-1 rounded bg-slate-800 text-slate-300">{ip}</span>
+              {/* WAN / ISP Information */}
+              {(wan.isp_name || wan.isp_organization || wan.asn || wan.netmask) && (
+                <div className="pt-5 border-t border-slate-800">
+                  <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">WAN / ISP Information</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {[
+                      { label: "ISP", value: wan.isp_name },
+                      { label: "ISP Organization", value: wan.isp_organization },
+                      { label: "ASN", value: wan.asn ? `AS${wan.asn}` : null },
+                      { label: "WAN Netmask", value: wan.netmask },
+                    ].filter(i => i.value).map(item => (
+                      <div key={item.label}>
+                        <div className="text-xs text-slate-500 mb-0.5">{item.label}</div>
+                        <div className="text-sm font-medium text-white break-all font-mono">{item.value}</div>
+                      </div>
                     ))}
                   </div>
                 </div>
               )}
+
+              {/* Layer-3 Interfaces */}
+              {sysinfo.ip_addrs?.length > 0 && (() => {
+                const svIs = sysinfo.ip_addrs.filter(ip => ip.endsWith(".1"));
+                const others = sysinfo.ip_addrs.filter(ip => !ip.endsWith(".1"));
+                return (
+                  <div className="pt-5 border-t border-slate-800 flex flex-col gap-4">
+                    <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Layer-3 Interfaces</h3>
+
+                    {svIs.length > 0 && (
+                      <div>
+                        <div className="text-xs text-slate-400 mb-1.5 flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 inline-block" />
+                          VLAN Default Gateways (SVIs)
+                          <span className="text-slate-600 ml-1">— exit interfaces for their respective VLANs</span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {svIs.map((ip, i) => (
+                            <span key={i} className="text-xs font-mono px-2.5 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-300">{ip}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {others.length > 0 && (
+                      <div>
+                        <div className="text-xs text-slate-400 mb-1.5 flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-slate-500 inline-block" />
+                          Router Interface Addresses
+                          <span className="text-slate-600 ml-1">— management, secondary, VPN, or internal routing IPs</span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {others.map((ip, i) => (
+                            <span key={i} className="text-xs font-mono px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 text-slate-300">{ip}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           )}
         </>
