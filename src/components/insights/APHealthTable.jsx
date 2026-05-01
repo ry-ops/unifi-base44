@@ -16,9 +16,14 @@ function bar(val, max = 100, color = "bg-blue-500") {
 }
 
 export default function APHealthTable({ devices }) {
+  const NON_AP_TYPES = ["ugw", "udm", "uxg", "ucg", "usw", "usp", "ups", "pdu", "uck", "hub"];
   const aps = devices.filter(d => {
-    const t = (d.type || d.model || "").toLowerCase();
-    return t.includes("uap") || t.includes("ap") || d.type === "uap";
+    const t = (d.type || "").toLowerCase();
+    const m = (d.model || "").toLowerCase();
+    // Exclude known non-AP device types
+    if (NON_AP_TYPES.some(x => t.startsWith(x) || m.startsWith(x))) return false;
+    // Must be uap type, or model starts with uap, or has radio_table (has radios)
+    return t === "uap" || m.startsWith("uap") || (d.radio_table && d.radio_table.length > 0);
   });
 
   return (

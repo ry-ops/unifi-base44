@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNetwork } from "@/components/layout/AppLayout";
-import { unifiCall, formatBytes, getIspMetrics } from "@/lib/unifi";
+import { unifiCall, formatBytes } from "@/lib/unifi";
 import { RefreshCw, BarChart2, Wifi, Signal, Radio, Activity, Cpu, Database, Globe } from "lucide-react";
 import ClientsBandChart from "@/components/insights/ClientsBandChart";
 import ClientsSignalChart from "@/components/insights/ClientsSignalChart";
@@ -24,6 +24,7 @@ export default function Insights() {
   const [lastRefresh, setLastRefresh] = useState(null);
   const [autoRefresh, setAutoRefresh] = useState(60);
   const timerRef = useRef(null);
+  const wanHistoryRef = useRef([]); // rolling 72-sample (~6h at 5m) history
 
   useEffect(() => {
     if (selectedSite?.hostId) load();
@@ -45,36 +46,32 @@ export default function Insights() {
     const siteRef = selectedSite?.meta?.name || "default";
     const base = `/v1/connector/consoles/${hostId}/proxy/network/api/s/${siteRef}`;
 
-    const [staRes, apRes, healthRes, ispRes] = await Promise.all([
+    const [staRes, apRes, healthRes] = await Promise.all([
       unifiCall("GET", `${base}/stat/sta`).catch(() => null),
       unifiCall("GET", `${base}/stat/device`).catch(() => null),
       unifiCall("GET", `${base}/stat/health`).catch(() => null),
-      getIspMetrics("5m", { duration: "6h" }).catch(() => null),
     ]);
 
     const clients = Array.isArray(staRes?.data?.data) ? staRes.data.data : [];
     const devices = Array.isArray(apRes?.data?.data) ? apRes.data.data : [];
     const healthList = Array.isArray(healthRes?.data?.data) ? healthRes.data.data : [];
 
-    // Parse ISP metrics into time series
-    const ispRaw = Array.isArray(ispRes?.data?.data) ? ispRes.data.data : [];
-    const ispSeries = [];
-    ispRaw.forEach(entry => {
-      (entry.periods || []).forEach(p => {
-        const ts = p.metricTime || p.timestamp;
-        const wan = p.data?.wan || {};
-        if (!ts) return;
-        ispSeries.push({
-          time: new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          download: (wan.download_kbps || 0) / 1000,
-          upload: (wan.upload_kbps || 0) / 1000,
-          latency: wan.avgLatency || null,
-        });
-      });
-    });
-    ispSeries.sort((a, b) => a.time.localeCompare(b.time));
+    // Accumulate live WAN throughput samples into rolling history
+    const wanHealth = healthList.find(h => h.subsystem === "wan") || {};
+    const txRate = wanHealth["tx_bytes-r"] || 0; // bytes/sec
+    const rxRate = wanHealth["rx_bytes-r"] || 0;
+    const latency = wanHealth.latency || wanHealth.uptime_stats?.WAN?.monitors?.[0]?.latency_average || null;
+    if (txRate > 0 || rxRate > 0) {
+      const sample = {
+        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        download: parseFloat(((rxRate * 8) / 1e6).toFixed(2)), // Mbps
+        upload: parseFloat(((txRate * 8) / 1e6).toFixed(2)),
+        latency: latency ? parseFloat(latency) : null,
+      };
+      wanHistoryRef.current = [...wanHistoryRef.current, sample].slice(-72);
+    }
 
-    setData({ clients, devices, healthList, ispSeries });
+    setData({ clients, devices, healthList, ispSeries: wanHistoryRef.current });
     setLastRefresh(new Date());
     setLoading(false);
   };

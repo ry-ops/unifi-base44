@@ -25,10 +25,10 @@ export default function WanMetricsChart({ series }) {
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
       <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-        <Globe className="w-3.5 h-3.5 text-orange-400" /> WAN Throughput & Latency — Last 6h
+        <Globe className="w-3.5 h-3.5 text-orange-400" /> WAN Throughput & Latency (Live Samples)
       </h3>
       {!series.length ? (
-        <div className="h-44 flex items-center justify-center text-slate-600 text-sm">No WAN metrics — requires UniFi Cloud connectivity</div>
+        <div className="h-44 flex items-center justify-center text-slate-600 text-sm">Collecting samples — data appears after first refresh cycle</div>
       ) : (
         <ResponsiveContainer width="100%" height={180}>
           <AreaChart data={series} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
