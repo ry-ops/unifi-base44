@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNetwork } from "@/components/layout/AppLayout";
-import { getSiteNetworks, getSiteWlans, getSitePortForwarding, getSiteTrafficRoutes, getNetworkSites } from "@/lib/unifi";
+import { getSiteNetworks, getSitePortForwarding, getSiteTrafficRoutes, getNetworkSites, unifiCall } from "@/lib/unifi";
 import { Wifi, Globe, Network, Shield, RefreshCw, Lock, Unlock, ArrowRight } from "lucide-react";
 
 function SectionHeader({ label }) {
@@ -42,9 +42,10 @@ export default function Networks() {
 
     const safe = fn => fn().catch(() => null);
     const siteId = networkSiteId || selectedSite.id;
+    const siteRef = selectedSite?.meta?.name || "default";
     const [n, w, pf, tr] = await Promise.all([
       safe(() => getSiteNetworks(selectedSite.hostId, siteId)),
-      safe(() => getSiteWlans(selectedSite.hostId, siteId)),
+      safe(() => unifiCall("GET", `/v1/connector/consoles/${selectedSite.hostId}/proxy/network/api/s/${siteRef}/rest/wlanconf`)),
       safe(() => getSitePortForwarding(selectedSite.hostId, siteId)),
       safe(() => getSiteTrafficRoutes(selectedSite.hostId, siteId)),
     ]);
@@ -133,22 +134,24 @@ export default function Networks() {
             : (
               <div className="divide-y divide-slate-800">
                 {wlans.map((w, i) => (
-                  <div key={w.id || i} className="px-4 py-3 flex items-center justify-between">
+                  <div key={w._id || i} className="px-4 py-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <Wifi className="w-4 h-4 text-blue-400 flex-shrink-0" />
                       <div>
-                        <div className="text-sm text-white font-medium">{w.name || w.ssid || "—"}</div>
+                        <div className="text-sm text-white font-medium">{w.name || "—"}</div>
                         <div className="text-xs text-slate-500">
-                          {w.band || "—"} · VLAN {w.vlanId || "default"}
+                          {w.security || "open"} · {w.vlan_enabled && w.vlanid ? `VLAN ${w.vlanid}` : "No VLAN"}
+                          {w.is_guest ? " · Guest" : ""}
                         </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      {w.security || w.securityProtocol ? (
+                      {w.security && w.security !== "open" ? (
                         <Lock className="w-3.5 h-3.5 text-green-400" />
                       ) : (
                         <Unlock className="w-3.5 h-3.5 text-yellow-400" />
                       )}
+                      {w.is_guest && <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400">Guest</span>}
                       <span className={`text-xs px-2 py-0.5 rounded-full ${w.enabled === false ? "bg-slate-700 text-slate-400" : "bg-blue-500/20 text-blue-400"}`}>
                         {w.enabled === false ? "Disabled" : "Enabled"}
                       </span>
