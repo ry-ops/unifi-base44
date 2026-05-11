@@ -25,8 +25,9 @@ export function buildNetworkColors(networks) {
     const entry = PALETTE[i % PALETTE.length];
     const key = net.id || net._id;
     if (key) map[key] = entry;
-    // also index by _id if different
     if (net._id && net._id !== key) map[net._id] = entry;
+    if (net.networkId && net.networkId !== key) map[net.networkId] = entry;
+    if (net.networkUUID && net.networkUUID !== key) map[net.networkUUID] = entry;
   });
   return map;
 }

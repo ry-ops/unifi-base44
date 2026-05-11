@@ -79,22 +79,39 @@ export default function ZoneTopology({ zones, policies, networks, selectedNetwor
   }, [zones]);
 
   const networkToZone = useMemo(() => {
-    const m = {}; zones.forEach(z => { (z.networkIds || []).forEach(nid => { m[nid] = z; }); }); return m;
+    const m = {};
+    zones.forEach(z => {
+      (z.networkIds || []).forEach(nid => { m[nid] = z; });
+    });
+    return m;
   }, [zones]);
 
   const focusZone = useMemo(() => {
     if (selectedZone) return selectedZone;
     if (selectedNetwork) {
-      const ids = [selectedNetwork.id, selectedNetwork._id, selectedNetwork.networkId].filter(Boolean);
-      for (const id of ids) if (networkToZone[id]) return networkToZone[id];
+      // Collect all possible ID values from the network object
+      const netIds = new Set(
+        [selectedNetwork.id, selectedNetwork._id, selectedNetwork.networkId, selectedNetwork.networkUUID]
+          .filter(Boolean).map(String)
+      );
+      // Check prebuilt map first
+      for (const id of netIds) {
+        if (networkToZone[id]) return networkToZone[id];
+      }
+      // Deep scan: check every value on the network object against zone.networkIds
+      const netAllValues = new Set(Object.values(selectedNetwork).filter(v => typeof v === "string" && v.length > 4).map(String));
+      for (const zone of zones) {
+        const zoneNetIds = (zone.networkIds || []).map(String);
+        if (zoneNetIds.some(zid => netAllValues.has(zid) || netIds.has(zid))) return zone;
+      }
     }
     return null;
-  }, [selectedZone, selectedNetwork, networkToZone]);
+  }, [selectedZone, selectedNetwork, networkToZone, zones]);
 
   // When a specific network is selected, use its unique color for the highlight
   const focusColor = useMemo(() => {
     if (selectedNetwork) {
-      const ids = [selectedNetwork.id, selectedNetwork._id].filter(Boolean);
+      const ids = [selectedNetwork.id, selectedNetwork._id, selectedNetwork.networkId, selectedNetwork.networkUUID].filter(Boolean);
       for (const id of ids) if (networkColors[id]) return networkColors[id].color;
     }
     return null;
