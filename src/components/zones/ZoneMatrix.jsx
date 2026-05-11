@@ -9,6 +9,11 @@ const ZONE_HEADER_COLORS = {
   Dmz: "bg-red-700/80 text-white",
 };
 
+function fmtZoneName(name) {
+  if (!name) return name;
+  return name.replace(/^Dmz$/i, "DMZ");
+}
+
 function getCellSummary(srcZone, dstZone, policies) {
   if (srcZone.id === dstZone.id) return null; // same zone
 
@@ -73,7 +78,7 @@ export default function ZoneMatrix({ zones, policies, onSelectPair }) {
               <div className="w-32 flex-shrink-0" />
               {zones.map(zone => (
                 <div key={zone.id} className={`flex-1 min-w-[90px] text-center text-xs font-semibold py-2 px-1 rounded-t-lg ${ZONE_HEADER_COLORS[zone.name] || "bg-slate-700 text-slate-300"}`}>
-                  {zone.name}
+                  {fmtZoneName(zone.name)}
                 </div>
               ))}
             </div>
@@ -83,7 +88,7 @@ export default function ZoneMatrix({ zones, policies, onSelectPair }) {
               <div key={srcZone.id} className="flex gap-1 mb-1">
                 {/* Row header */}
                 <div className={`w-32 flex-shrink-0 flex items-center justify-center text-xs font-semibold py-3 px-2 rounded-l-lg ${ZONE_HEADER_COLORS[srcZone.name] || "bg-slate-700 text-slate-300"}`}>
-                  {srcZone.name}
+                  {fmtZoneName(srcZone.name)}
                 </div>
 
                 {zones.map(dstZone => {

@@ -14,14 +14,15 @@ function ActionBadge({ action }) {
 
 export default function PolicyDrawer({ srcZone, dstZone, policies, allZones, onClose }) {
   const zoneMap = {};
-  allZones.forEach(z => { zoneMap[z.id] = z.name; });
+  allZones.forEach(z => { zoneMap[z.id] = z.name?.replace(/^Dmz$/i, "DMZ") || z.name; });
 
   const filtered = srcZone && dstZone
     ? policies.filter(p => p.source?.zoneId === srcZone.id && p.destination?.zoneId === dstZone.id)
     : policies;
 
+  const fmt = n => n?.replace(/^Dmz$/i, "DMZ") || n;
   const title = srcZone && dstZone
-    ? `${srcZone.name} → ${dstZone.name}`
+    ? `${fmt(srcZone.name)} → ${fmt(dstZone.name)}`
     : `All Policies`;
 
   return (
