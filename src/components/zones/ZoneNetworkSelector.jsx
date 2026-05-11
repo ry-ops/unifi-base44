@@ -112,17 +112,14 @@ export default function ZoneNetworkSelector({ zones, networks, selectedZone, sel
                   <div className="flex flex-wrap gap-2">
                     {nets.map(net => {
                       const isActive = selectedNetwork?.id === net.id || selectedNetwork?._id === net._id;
-                      const nc = networkColors[net.id] || networkColors[net._id];
-                      const tw = nc?.tailwind || c;
                       return (
                         <button key={net.id || net._id}
                           onClick={() => onSelectNetwork(isActive ? null : net)}
                           className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all duration-150 ${
                             isActive
-                              ? `${tw.activeBg} ${tw.border} text-white ring-2 ${tw.ring} ring-offset-1 ring-offset-slate-900 scale-105 shadow-lg`
-                              : `bg-slate-800 ${tw.border} ${tw.text} hover:border-slate-500 hover:scale-105`
+                              ? `${c.activeBg} ${c.border} text-white ring-2 ${c.ring} ring-offset-1 ring-offset-slate-900 scale-105 shadow-lg`
+                              : `bg-slate-800 ${c.border} ${c.text} hover:border-slate-500 hover:scale-105`
                           }`}>
-                          {nc && <span className="inline-block w-2 h-2 rounded-full mr-1.5 flex-shrink-0" style={{ background: nc.color }} />}
                           {net.name || net.id}
                           {net.vlanId != null && (
                             <span className="ml-1.5 opacity-60 font-normal">VLAN {net.vlanId}</span>
