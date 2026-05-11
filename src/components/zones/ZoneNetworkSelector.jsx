@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { buildNetworkColors } from "@/lib/networkColors";
 
 const ZONE_COLORS = {
   Internal: { activeBg: "bg-blue-600",   border: "border-blue-500",   text: "text-blue-300",   ring: "ring-blue-400"   },
@@ -10,7 +11,7 @@ const ZONE_COLORS = {
 };
 const DEFAULT_COLOR = { activeBg: "bg-slate-600", border: "border-slate-600", text: "text-slate-300", ring: "ring-slate-400" };
 
-export default function ZoneNetworkSelector({ zones, networks, selectedZone, selectedNetwork, onSelectZone, onSelectNetwork }) {
+export default function ZoneNetworkSelector({ zones, networks, selectedZone, selectedNetwork, onSelectZone, onSelectNetwork, networkColors = {} }) {
   const [mode, setMode] = useState("zones");
 
   // Build a lookup: any id variant of a network -> zone
@@ -111,14 +112,17 @@ export default function ZoneNetworkSelector({ zones, networks, selectedZone, sel
                   <div className="flex flex-wrap gap-2">
                     {nets.map(net => {
                       const isActive = selectedNetwork?.id === net.id || selectedNetwork?._id === net._id;
+                      const nc = networkColors[net.id] || networkColors[net._id];
+                      const tw = nc?.tailwind || c;
                       return (
                         <button key={net.id || net._id}
                           onClick={() => onSelectNetwork(isActive ? null : net)}
                           className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all duration-150 ${
                             isActive
-                              ? `${c.activeBg} ${c.border} text-white ring-2 ${c.ring} ring-offset-1 ring-offset-slate-900 scale-105 shadow-lg`
-                              : `bg-slate-800 ${c.border} opacity-70 ${c.text} hover:opacity-100 hover:scale-105`
+                              ? `${tw.activeBg} ${tw.border} text-white ring-2 ${tw.ring} ring-offset-1 ring-offset-slate-900 scale-105 shadow-lg`
+                              : `bg-slate-800 ${tw.border} opacity-70 ${tw.text} hover:opacity-100 hover:scale-105`
                           }`}>
+                          {nc && <span className="inline-block w-2 h-2 rounded-full mr-1.5 flex-shrink-0" style={{ background: nc.color }} />}
                           {net.name || net.id}
                           {net.vlanId != null && (
                             <span className="ml-1.5 opacity-60 font-normal">VLAN {net.vlanId}</span>

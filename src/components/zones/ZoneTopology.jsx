@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import { ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
+import { buildNetworkColors } from "@/lib/networkColors";
 
 // Normalize zone name for display — always capitalize DMZ
 function displayName(name) {
@@ -59,7 +60,7 @@ const LEGEND = [
   { lineType: "dotted",    color: "#475569", label: "No Rule" },
 ];
 
-export default function ZoneTopology({ zones, policies, networks, selectedNetwork, selectedZone }) {
+export default function ZoneTopology({ zones, policies, networks, selectedNetwork, selectedZone, networkColors = {} }) {
   const svgRef = useRef(null);
   const [hoveredEdge, setHoveredEdge] = useState(null);
 
@@ -89,6 +90,15 @@ export default function ZoneTopology({ zones, policies, networks, selectedNetwor
     }
     return null;
   }, [selectedZone, selectedNetwork, networkToZone]);
+
+  // When a specific network is selected, use its unique color for the highlight
+  const focusColor = useMemo(() => {
+    if (selectedNetwork) {
+      const ids = [selectedNetwork.id, selectedNetwork._id].filter(Boolean);
+      for (const id of ids) if (networkColors[id]) return networkColors[id].color;
+    }
+    return null;
+  }, [selectedNetwork, networkColors]);
 
   const edges = useMemo(() => {
     const seen = new Set(), result = [];
@@ -239,6 +249,12 @@ export default function ZoneTopology({ zones, policies, networks, selectedNetwor
                 <path d="M0,0 L0,6 L8,3 z" fill={MARKER_COLORS[t]} />
               </marker>
             ))}
+            {/* Dynamic marker for selected network color */}
+            {focusColor && (
+              <marker id="arr-focus" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+                <path d="M0,0 L0,6 L8,3 z" fill={focusColor} />
+              </marker>
+            )}
             <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
               <feGaussianBlur stdDeviation="4" result="blur" />
               <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
@@ -270,10 +286,12 @@ export default function ZoneTopology({ zones, policies, networks, selectedNetwor
               const sp = pos(edge.srcZone.name);
               const dp = pos(edge.dstZone.name);
               if (!sp || !dp) return null;
-              const { color, dash, width, marker, label, animated } = edge.style;
+              const { color: baseColor, dash, width, marker, label, animated } = edge.style;
               const isHovered = hoveredEdge === i;
               const isFocused = !!focusZone && (edge.srcZone.id === focusZone.id || edge.dstZone.id === focusZone.id);
               const opacity = focusZone ? (isFocused ? 1 : 0.07) : 0.7;
+              // Use network-specific color for focused edges when a VLAN is selected
+              const color = (isFocused && focusColor) ? focusColor : baseColor;
 
               const angle = Math.atan2(dp.y - sp.y, dp.x - sp.x);
               const ox = Math.sin(angle) * 5, oy = -Math.cos(angle) * 5;
@@ -298,18 +316,18 @@ export default function ZoneTopology({ zones, policies, networks, selectedNetwor
                   <path d={pathD} stroke={color} strokeWidth={isHovered ? width + 1.5 : width}
                     strokeDasharray={dash === "none" ? "none" : dash}
                     fill="none"
-                    markerEnd={`url(#arr-${marker})`}
-                    filter={isHovered ? "url(#glow)" : undefined}
+                    markerEnd={`url(#${isFocused && focusColor ? "arr-focus" : `arr-${marker}`})`}
+                    filter={isHovered || isFocused ? "url(#glow)" : undefined}
                   />
                   {/* Animated overlay — flowing dots */}
                   {animated && (
                     <path d={pathD}
                       stroke={color}
-                      strokeWidth={width + 0.5}
+                      strokeWidth={isFocused && focusColor ? width + 1.5 : width + 0.5}
                       strokeDasharray="6,22"
                       strokeDashoffset="0"
                       fill="none"
-                      opacity="0.65"
+                      opacity={isFocused && focusColor ? 0.9 : 0.65}
                       className={animClass}
                       style={{ pointerEvents: "none" }}
                     />
@@ -331,6 +349,8 @@ export default function ZoneTopology({ zones, policies, networks, selectedNetwor
               const isFocus = focusZone?.id === zone.id;
               const dimmed = focusZone && !isFocus;
               const label = displayName(zone.name);
+              // Use network-specific color when a VLAN is selected and this is the focus zone
+              const ringColor = (isFocus && focusColor) ? focusColor : cfg.color;
 
               return (
                 <g key={zone.id}
@@ -338,20 +358,34 @@ export default function ZoneTopology({ zones, policies, networks, selectedNetwor
                   onMouseDown={(e) => onNodeMouseDown(e, zone.name)}>
                   {/* Pulse ring when focused */}
                   {isFocus && (
-                    <circle cx={p.x} cy={p.y} r={NODE_R + 10} fill={cfg.color}
-                      style={{ animation: "pulseNode 2s ease-in-out infinite" }} opacity={0.15} />
+                    <circle cx={p.x} cy={p.y} r={NODE_R + 12} fill={ringColor}
+                      style={{ animation: "pulseNode 2s ease-in-out infinite" }} opacity={0.18} />
+                  )}
+                  {/* Extra colored ring when a specific VLAN is selected */}
+                  {isFocus && focusColor && (
+                    <circle cx={p.x} cy={p.y} r={NODE_R + 4}
+                      fill="none" stroke={focusColor} strokeWidth="2.5" opacity={0.7}
+                      strokeDasharray="5,3" />
                   )}
                   <circle cx={p.x} cy={p.y} r={NODE_R}
                     fill={cfg.dark}
-                    stroke={cfg.color}
+                    stroke={ringColor}
                     strokeWidth={isFocus ? 2.5 : 1.2}
                     filter={isFocus ? "url(#glow)" : undefined}
                   />
                   <text x={p.x} y={p.y + 5} textAnchor="middle"
-                    fill={cfg.color} fontSize="10" fontWeight="700"
+                    fill={ringColor} fontSize="10" fontWeight="700"
                     style={{ pointerEvents: "none" }}>
                     {label}
                   </text>
+                  {/* Show network name below zone when a VLAN is selected */}
+                  {isFocus && selectedNetwork && (
+                    <text x={p.x} y={p.y + NODE_R + 14} textAnchor="middle"
+                      fill={ringColor} fontSize="7.5" fontWeight="600"
+                      style={{ pointerEvents: "none" }}>
+                      {selectedNetwork.name || selectedNetwork.id}
+                    </text>
+                  )}
                 </g>
               );
             })}

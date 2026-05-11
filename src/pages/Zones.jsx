@@ -7,6 +7,7 @@ import ZoneMatrix from "@/components/zones/ZoneMatrix";
 import PolicyDrawer from "@/components/zones/PolicyDrawer";
 import ZoneTopology from "@/components/zones/ZoneTopology";
 import ZoneNetworkSelector from "@/components/zones/ZoneNetworkSelector";
+import { buildNetworkColors } from "@/lib/networkColors";
 
 export default function Zones() {
   const { selectedSite } = useNetwork();
@@ -95,6 +96,7 @@ export default function Zones() {
             networks={networks}
             selectedZone={selectedZone}
             selectedNetwork={selectedNetwork}
+            networkColors={buildNetworkColors(networks)}
           />
           <ZoneNetworkSelector
             zones={zones}
@@ -103,6 +105,7 @@ export default function Zones() {
             selectedNetwork={selectedNetwork}
             onSelectZone={(z) => { setSelectedZone(z); setSelectedNetwork(null); }}
             onSelectNetwork={(n) => { setSelectedNetwork(n); setSelectedZone(null); }}
+            networkColors={buildNetworkColors(networks)}
           />
           <ZoneList zones={zones} networks={networks} />
           <ZoneMatrix zones={zones} policies={policies} onSelectPair={setSelectedPair} />
