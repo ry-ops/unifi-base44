@@ -117,10 +117,10 @@ export default function ZoneNetworkSelector({ zones, networks, selectedZone, sel
                       return (
                         <button key={net.id || net._id}
                           onClick={() => onSelectNetwork(isActive ? null : net)}
-                          className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all duration-150 ${
+                          className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all duration-150 ${
                             isActive
                               ? `${tw.activeBg} ${tw.border} text-white ring-2 ${tw.ring} ring-offset-1 ring-offset-slate-900 scale-105 shadow-lg`
-                              : `bg-slate-800 ${tw.border} opacity-70 ${tw.text} hover:opacity-100 hover:scale-105`
+                              : `bg-slate-800 border-slate-700 ${tw.text} hover:border-slate-500 hover:scale-105`
                           }`}>
                           {nc && <span className="inline-block w-2 h-2 rounded-full mr-1.5 flex-shrink-0" style={{ background: nc.color }} />}
                           {net.name || net.id}
