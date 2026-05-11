@@ -18,6 +18,7 @@ import Settings from '@/pages/Settings';
 import WiFi from '@/pages/WiFi';
 import Gateway from '@/pages/Gateway';
 import Insights from '@/pages/Insights';
+import Zones from '@/pages/Zones';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -50,6 +51,7 @@ const AuthenticatedApp = () => {
         <Route path="/wifi" element={<WiFi />} />
         <Route path="/gateway" element={<Gateway />} />
         <Route path="/insights" element={<Insights />} />
+        <Route path="/zones" element={<Zones />} />
         <Route path="/security" element={<Security />} />
         <Route path="/terminal" element={<Terminal />} />
         <Route path="/chat" element={<Chat />} />
