@@ -38,7 +38,7 @@ export default function ZoneList({ zones, networks }) {
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
                     {!configurable && <Lock className="w-3 h-3 text-slate-500 flex-shrink-0" />}
-                    <span className="font-medium text-white">{zone.name?.replace(/^Dmz$/i, "DMZ") || zone.name}</span>
+                    <span className="font-medium text-white">{zone.name?.replace(/^Dmz$/i, "DMZ").replace(/^Vpn$/i, "VPN") || zone.name}</span>
                   </div>
                 </td>
                 <td className="px-4 py-3">

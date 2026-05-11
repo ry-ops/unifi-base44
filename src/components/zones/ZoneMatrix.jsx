@@ -11,7 +11,7 @@ const ZONE_HEADER_COLORS = {
 
 function fmtZoneName(name) {
   if (!name) return name;
-  return name.replace(/^Dmz$/i, "DMZ");
+  return name.replace(/^Dmz$/i, "DMZ").replace(/^Vpn$/i, "VPN");
 }
 
 function getCellSummary(srcZone, dstZone, policies) {

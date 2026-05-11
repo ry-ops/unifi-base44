@@ -106,7 +106,7 @@ export default function ZoneNetworkSelector({ zones, networks, selectedZone, sel
               return (
                 <div key={zone.id}>
                   <div className={`text-xs font-bold mb-1.5 uppercase tracking-wider ${c.text}`}>
-                    {zone.name?.replace(/^Dmz$/i, "DMZ") || zone.name}
+                    {zone.name?.replace(/^Dmz$/i, "DMZ").replace(/^Vpn$/i, "VPN") || zone.name}
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {nets.map(net => {

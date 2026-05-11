@@ -4,7 +4,7 @@ import { ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
 // Normalize zone name for display — always capitalize DMZ
 function displayName(name) {
   if (!name) return name;
-  return name.replace(/\bDmz\b/gi, "DMZ").replace(/\bdmz\b/gi, "DMZ");
+  return name.replace(/\bDmz\b/gi, "DMZ").replace(/\bdmz\b/gi, "DMZ").replace(/\bVpn\b/gi, "VPN").replace(/\bvpn\b/gi, "VPN");
 }
 
 // Initial node positions
