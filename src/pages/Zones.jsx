@@ -5,6 +5,8 @@ import { RefreshCw, ShieldCheck } from "lucide-react";
 import ZoneList from "@/components/zones/ZoneList";
 import ZoneMatrix from "@/components/zones/ZoneMatrix";
 import PolicyDrawer from "@/components/zones/PolicyDrawer";
+import ZoneTopology from "@/components/zones/ZoneTopology";
+import ZoneNetworkSelector from "@/components/zones/ZoneNetworkSelector";
 
 export default function Zones() {
   const { selectedSite } = useNetwork();
@@ -13,6 +15,8 @@ export default function Zones() {
   const [networks, setNetworks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedPair, setSelectedPair] = useState(null); // { src, dst } zone objects
+  const [selectedZone, setSelectedZone] = useState(null);
+  const [selectedNetwork, setSelectedNetwork] = useState(null);
 
   useEffect(() => {
     if (selectedSite?.hostId) load();
@@ -85,6 +89,21 @@ export default function Zones() {
         </div>
       ) : (
         <>
+          <ZoneTopology
+            zones={zones}
+            policies={policies}
+            networks={networks}
+            selectedZone={selectedZone}
+            selectedNetwork={selectedNetwork}
+          />
+          <ZoneNetworkSelector
+            zones={zones}
+            networks={networks}
+            selectedZone={selectedZone}
+            selectedNetwork={selectedNetwork}
+            onSelectZone={(z) => { setSelectedZone(z); setSelectedNetwork(null); }}
+            onSelectNetwork={(n) => { setSelectedNetwork(n); setSelectedZone(null); }}
+          />
           <ZoneList zones={zones} networks={networks} />
           <ZoneMatrix zones={zones} policies={policies} onSelectPair={setSelectedPair} />
         </>
