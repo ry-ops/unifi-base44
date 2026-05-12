@@ -94,42 +94,32 @@ export default function ZoneNetworkSelector({ zones, networks, selectedZone, sel
         </div>
       )}
 
-      {/* VLAN/Network buttons grouped by zone */}
+      {/* VLAN/Network buttons */}
       {mode === "vlans" && (
         !hasAnyVlans ? (
           <p className="text-xs text-slate-500 italic">No networks with zone assignments found.</p>
         ) : (
-          <div className="flex flex-col gap-4">
-            {zones.map(zone => {
+          <div className="flex flex-wrap gap-2">
+            {zones.flatMap(zone => {
               const nets = networksByZone[zone.id] || [];
-              if (!nets.length) return null;
               const c = ZONE_COLORS[zone.name] || DEFAULT_COLOR;
-              return (
-                <div key={zone.id}>
-                  <div className={`text-xs font-bold mb-1.5 uppercase tracking-wider ${c.text}`}>
-                    {zone.name?.replace(/^Dmz$/i, "DMZ").replace(/^Vpn$/i, "VPN") || zone.name}
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {nets.map(net => {
-                      const isActive = selectedNetwork?.id === net.id || selectedNetwork?._id === net._id;
-                      return (
-                        <button key={net.id || net._id}
-                          onClick={() => onSelectNetwork(isActive ? null : net)}
-                          className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all duration-150 ${
-                            isActive
-                              ? `${c.activeBg} ${c.border} text-white ring-2 ${c.ring} ring-offset-1 ring-offset-slate-900 scale-105 shadow-lg`
-                              : `bg-slate-800 ${c.border} ${c.text} hover:border-slate-500 hover:scale-105`
-                          }`}>
-                          {net.name || net.id}
-                          {net.vlanId != null && (
-                            <span className="ml-1.5 opacity-60 font-normal">VLAN {net.vlanId}</span>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
+              return nets.map(net => {
+                const isActive = selectedNetwork?.id === net.id || selectedNetwork?._id === net._id;
+                return (
+                  <button key={net.id || net._id}
+                    onClick={() => onSelectNetwork(isActive ? null : net)}
+                    className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all duration-150 ${
+                      isActive
+                        ? `${c.activeBg} ${c.border} text-white ring-2 ${c.ring} ring-offset-1 ring-offset-slate-900 scale-105 shadow-lg`
+                        : `bg-slate-800 border-slate-700 ${c.text} hover:border-slate-500 hover:scale-105`
+                    }`}>
+                    {net.name || net.id}
+                    {net.vlanId != null && (
+                      <span className="ml-1.5 opacity-60 font-normal">VLAN {net.vlanId}</span>
+                    )}
+                  </button>
+                );
+              });
             })}
           </div>
         )
