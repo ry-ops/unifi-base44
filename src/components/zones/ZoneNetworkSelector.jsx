@@ -10,6 +10,22 @@ const ZONE_COLORS = {
 };
 const DEFAULT_COLOR = { text: "text-slate-300", activeBorder: "border-slate-400", inactiveBorder: "border-slate-600" };
 
+const NETWORK_NAME_COLORS = {
+  ADMIN:  "text-rose-400",
+  PRINT:  "text-sky-400",
+  IoT:    "text-emerald-400",
+  USERS:  "text-violet-400",
+  PVE:    "text-amber-400",
+};
+function getNetworkNameColor(name) {
+  if (!name) return "text-slate-300";
+  const upper = name.toUpperCase();
+  for (const [key, cls] of Object.entries(NETWORK_NAME_COLORS)) {
+    if (upper === key.toUpperCase()) return cls;
+  }
+  return "text-slate-300";
+}
+
 export default function ZoneNetworkSelector({ zones, networks, selectedZone, selectedNetwork, onSelectZone, onSelectNetwork }) {
   const [mode, setMode] = useState("zones");
 
@@ -101,12 +117,12 @@ export default function ZoneNetworkSelector({ zones, networks, selectedZone, sel
                 return (
                   <button key={net.id || net._id}
                     onClick={() => onSelectNetwork(isActive ? null : net)}
-                    className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all duration-150 bg-slate-900 ${c.text} ${
+                    className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all duration-150 bg-slate-900 ${
                       isActive ? `${c.activeBorder} brightness-125` : `${c.inactiveBorder} hover:border-slate-500`
                     }`}>
-                    {net.name || net.id}
+                    <span className={getNetworkNameColor(net.name)}>{net.name || net.id}</span>
                     {net.vlanId != null && (
-                      <span className="ml-1.5 opacity-60 font-normal">VLAN {net.vlanId}</span>
+                      <span className="ml-1.5 opacity-60 font-normal text-slate-400">VLAN {net.vlanId}</span>
                     )}
                   </button>
                 );
