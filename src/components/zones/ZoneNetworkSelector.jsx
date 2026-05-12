@@ -10,7 +10,7 @@ const ZONE_COLORS = {
 };
 const DEFAULT_COLOR = { activeBg: "bg-slate-600", border: "border-slate-600", text: "text-slate-300", ring: "ring-slate-400" };
 
-export default function ZoneNetworkSelector({ zones, networks, selectedZone, selectedNetwork, onSelectZone, onSelectNetwork, networkColors = {} }) {
+export default function ZoneNetworkSelector({ zones, networks, selectedZone, selectedNetwork, onSelectZone, onSelectNetwork }) {
   const [mode, setMode] = useState("zones");
 
   const networkToZone = useMemo(() => {
