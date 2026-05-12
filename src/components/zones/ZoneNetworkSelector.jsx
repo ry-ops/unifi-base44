@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from "react";
-import { buildNetworkColors } from "@/lib/networkColors";
 
 const ZONE_COLORS = {
   Internal: { activeBg: "bg-blue-600",   border: "border-blue-500",   text: "text-blue-300",   ring: "ring-blue-400"   },
@@ -14,8 +13,6 @@ const DEFAULT_COLOR = { activeBg: "bg-slate-600", border: "border-slate-600", te
 export default function ZoneNetworkSelector({ zones, networks, selectedZone, selectedNetwork, onSelectZone, onSelectNetwork, networkColors = {} }) {
   const [mode, setMode] = useState("zones");
 
-  // Build a lookup: any id variant of a network -> zone
-  // zone.networkIds may contain IDs that match n.id OR n._id
   const networkToZone = useMemo(() => {
     const m = {};
     zones.forEach(z => {
@@ -24,7 +21,6 @@ export default function ZoneNetworkSelector({ zones, networks, selectedZone, sel
     return m;
   }, [zones]);
 
-  // For each network, figure out which zone claims it (by checking all its id variants)
   function getNetworkZone(net) {
     const ids = [net.id, net._id, net.networkId].filter(Boolean);
     for (const id of ids) {
@@ -33,7 +29,6 @@ export default function ZoneNetworkSelector({ zones, networks, selectedZone, sel
     return null;
   }
 
-  // Group networks by their zone
   const networksByZone = useMemo(() => {
     const groups = {};
     zones.forEach(z => { groups[z.id] = []; });
@@ -94,7 +89,7 @@ export default function ZoneNetworkSelector({ zones, networks, selectedZone, sel
         </div>
       )}
 
-      {/* VLAN/Network buttons */}
+      {/* VLAN/Network buttons — same style as zone buttons */}
       {mode === "vlans" && (
         !hasAnyVlans ? (
           <p className="text-xs text-slate-500 italic">No networks with zone assignments found.</p>
