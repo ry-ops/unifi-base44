@@ -1,14 +1,14 @@
 import React, { useState, useMemo } from "react";
 
 const ZONE_COLORS = {
-  Internal: { activeBg: "bg-blue-600",   border: "border-blue-500",   text: "text-blue-300",   ring: "ring-blue-400"   },
-  External: { activeBg: "bg-orange-600", border: "border-orange-500", text: "text-orange-300", ring: "ring-orange-400" },
-  Gateway:  { activeBg: "bg-green-700",  border: "border-green-500",  text: "text-green-300",  ring: "ring-green-400"  },
-  Vpn:      { activeBg: "bg-purple-700", border: "border-purple-500", text: "text-purple-300", ring: "ring-purple-400" },
-  Hotspot:  { activeBg: "bg-yellow-600", border: "border-yellow-500", text: "text-yellow-300", ring: "ring-yellow-400" },
-  Dmz:      { activeBg: "bg-red-700",    border: "border-red-500",    text: "text-red-300",    ring: "ring-red-400"    },
+  Internal: { text: "text-blue-400",   activeBorder: "border-blue-400",   inactiveBorder: "border-slate-600" },
+  External: { text: "text-orange-400", activeBorder: "border-orange-400", inactiveBorder: "border-slate-600" },
+  Gateway:  { text: "text-green-400",  activeBorder: "border-green-400",  inactiveBorder: "border-slate-600" },
+  Vpn:      { text: "text-purple-400", activeBorder: "border-purple-400", inactiveBorder: "border-slate-600" },
+  Hotspot:  { text: "text-yellow-400", activeBorder: "border-yellow-400", inactiveBorder: "border-slate-600" },
+  Dmz:      { text: "text-red-400",    activeBorder: "border-red-400",    inactiveBorder: "border-slate-600" },
 };
-const DEFAULT_COLOR = { activeBg: "bg-slate-600", border: "border-slate-600", text: "text-slate-300", ring: "ring-slate-400" };
+const DEFAULT_COLOR = { text: "text-slate-300", activeBorder: "border-slate-400", inactiveBorder: "border-slate-600" };
 
 export default function ZoneNetworkSelector({ zones, networks, selectedZone, selectedNetwork, onSelectZone, onSelectNetwork }) {
   const [mode, setMode] = useState("zones");
@@ -76,13 +76,11 @@ export default function ZoneNetworkSelector({ zones, networks, selectedZone, sel
             return (
               <button key={zone.id}
                 onClick={() => onSelectZone(isActive ? null : zone)}
-                className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all duration-150 ${
-                  isActive
-                    ? `${c.activeBg} ${c.border} text-white ring-2 ${c.ring} ring-offset-1 ring-offset-slate-900 scale-105 shadow-lg`
-                    : `bg-slate-800 border-slate-700 ${c.text} hover:border-slate-500 hover:scale-105`
+                className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all duration-150 bg-slate-900 ${c.text} ${
+                  isActive ? `${c.activeBorder} brightness-125` : `${c.inactiveBorder} hover:border-slate-500`
                 }`}>
                 {zone.name}
-                {netCount > 0 && <span className="ml-1.5 opacity-60 font-normal">({netCount} nets)</span>}
+                {netCount > 0 && <span className="ml-1.5 opacity-50 font-normal">({netCount} nets)</span>}
               </button>
             );
           })}
@@ -103,10 +101,8 @@ export default function ZoneNetworkSelector({ zones, networks, selectedZone, sel
                 return (
                   <button key={net.id || net._id}
                     onClick={() => onSelectNetwork(isActive ? null : net)}
-                    className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all duration-150 ${
-                      isActive
-                        ? `${c.activeBg} ${c.border} text-white ring-2 ${c.ring} ring-offset-1 ring-offset-slate-900 scale-105 shadow-lg`
-                        : `bg-slate-800 border-slate-700 ${c.text} hover:border-slate-500 hover:scale-105`
+                    className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all duration-150 bg-slate-900 ${c.text} ${
+                      isActive ? `${c.activeBorder} brightness-125` : `${c.inactiveBorder} hover:border-slate-500`
                     }`}>
                     {net.name || net.id}
                     {net.vlanId != null && (
