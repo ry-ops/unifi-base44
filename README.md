@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/banner.svg" alt="unifi-base44: OmniFi: a Base44 app for chatting with your UniFi network" width="100%"></p>
+
 **Welcome to your Base44 project** 
 
 **About**
@@ -37,3 +39,8 @@ Open [Base44.com](http://Base44.com) and click on Publish.
 Documentation: [https://docs.base44.com/Integrations/Using-GitHub](https://docs.base44.com/Integrations/Using-GitHub)
 
 Support: [https://app.base44.com/support](https://app.base44.com/support)
+
+<!-- org-footer -->
+---
+
+<p align="center"><sub>Part of <a href="https://github.com/ry-ops">ry-ops</a> · building the pipes between infrastructure, automation, and observability · built by <a href="https://github.com/ry-ops">ry-ops</a></sub></p>
