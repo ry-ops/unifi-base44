@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 400" width="960" height="400" role="img" aria-labelledby="t d">
+  <title id="t">OmniFi app map</title>
+  <desc id="d">Twelve pages — Dashboard, Insights, Clients, Devices, Networks, WiFi, Zones, Security, Gateway, Terminal, Chat and Settings — backed by two Base44 serverless functions: unifiProxy (admin-gated proxy to the UniFi API) and unifiChat (the AI assistant).</desc>
+  <defs><linearGradient id="title" x1="0" x2="1"><stop offset="0" stop-color="#00a2ff"/><stop offset="1" stop-color="#22d3ee"/></linearGradient></defs>
+  <style>
+    text { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; fill:#e8eef5; }
+    .muted { fill:#8795a8; } .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    @keyframes p0 { 0%,1.67% { opacity:0; transform:translateY(7px) } 7.22%,100% { opacity:1; transform:translateY(0) } } .p0 { animation:p0 9.0s infinite; }
+    @keyframes p1 { 0%,3.11% { opacity:0; transform:translateY(7px) } 8.67%,100% { opacity:1; transform:translateY(0) } } .p1 { animation:p1 9.0s infinite; }
+    @keyframes p2 { 0%,4.56% { opacity:0; transform:translateY(7px) } 10.11%,100% { opacity:1; transform:translateY(0) } } .p2 { animation:p2 9.0s infinite; }
+    @keyframes p3 { 0%,6.00% { opacity:0; transform:translateY(7px) } 11.56%,100% { opacity:1; transform:translateY(0) } } .p3 { animation:p3 9.0s infinite; }
+    @keyframes p4 { 0%,7.44% { opacity:0; transform:translateY(7px) } 13.00%,100% { opacity:1; transform:translateY(0) } } .p4 { animation:p4 9.0s infinite; }
+    @keyframes p5 { 0%,8.89% { opacity:0; transform:translateY(7px) } 14.44%,100% { opacity:1; transform:translateY(0) } } .p5 { animation:p5 9.0s infinite; }
+    @keyframes p6 { 0%,10.33% { opacity:0; transform:translateY(7px) } 15.89%,100% { opacity:1; transform:translateY(0) } } .p6 { animation:p6 9.0s infinite; }
+    @keyframes p7 { 0%,11.78% { opacity:0; transform:translateY(7px) } 17.33%,100% { opacity:1; transform:translateY(0) } } .p7 { animation:p7 9.0s infinite; }
+    @keyframes p8 { 0%,13.22% { opacity:0; transform:translateY(7px) } 18.78%,100% { opacity:1; transform:translateY(0) } } .p8 { animation:p8 9.0s infinite; }
+    @keyframes p9 { 0%,14.67% { opacity:0; transform:translateY(7px) } 20.22%,100% { opacity:1; transform:translateY(0) } } .p9 { animation:p9 9.0s infinite; }
+    @keyframes p10 { 0%,16.11% { opacity:0; transform:translateY(7px) } 21.67%,100% { opacity:1; transform:translateY(0) } } .p10 { animation:p10 9.0s infinite; }
+    @keyframes p11 { 0%,17.56% { opacity:0; transform:translateY(7px) } 23.11%,100% { opacity:1; transform:translateY(0) } } .p11 { animation:p11 9.0s infinite; }
+    @keyframes be { 0%,21.11% { opacity:0 } 27.78%,100% { opacity:1 } } .be { animation:be 9.0s infinite; }
+    @media (prefers-reduced-motion: reduce) { * { animation:none !important; opacity:1 !important; transform:none !important; } }
+  </style>
+  <rect width="960" height="400" rx="20" fill="#0b0f17"/>
+  <text x="40" y="52" font-size="26" font-weight="800" style="fill:url(#title)">12 pages, one network</text>
+  <text x="42" y="78" font-size="14" class="muted">React + Vite on Base44 — a serverless backend proxies the UniFi API behind your login.</text>
+  <g class="p0"><rect x="40" y="116" width="207" height="48" rx="10" fill="#111a27" stroke="#243247"/>
+  <text x="56" y="138" font-size="13" font-weight="800" style="fill:#7cc4ff">Dashboard</text>
+  <text x="56" y="155" font-size="9.5" class="muted">stats · health · events</text></g><g class="p1"><rect x="261" y="116" width="207" height="48" rx="10" fill="#111a27" stroke="#243247"/>
+  <text x="277" y="138" font-size="13" font-weight="800" style="fill:#7cc4ff">Insights</text>
+  <text x="277" y="155" font-size="9.5" class="muted">traffic · AP health · channels</text></g><g class="p2"><rect x="482" y="116" width="207" height="48" rx="10" fill="#111a27" stroke="#243247"/>
+  <text x="498" y="138" font-size="13" font-weight="800" style="fill:#7cc4ff">Clients</text>
+  <text x="498" y="155" font-size="9.5" class="muted">table · signal · band</text></g><g class="p3"><rect x="703" y="116" width="207" height="48" rx="10" fill="#111a27" stroke="#243247"/>
+  <text x="719" y="138" font-size="13" font-weight="800" style="fill:#7cc4ff">Devices</text>
+  <text x="719" y="155" font-size="9.5" class="muted">health · adoption</text></g><g class="p4"><rect x="40" y="174" width="207" height="48" rx="10" fill="#111a27" stroke="#243247"/>
+  <text x="56" y="196" font-size="13" font-weight="800" style="fill:#7cc4ff">Networks</text>
+  <text x="56" y="213" font-size="9.5" class="muted">VLANs · subnets</text></g><g class="p5"><rect x="261" y="174" width="207" height="48" rx="10" fill="#111a27" stroke="#243247"/>
+  <text x="277" y="196" font-size="13" font-weight="800" style="fill:#7cc4ff">WiFi</text>
+  <text x="277" y="213" font-size="9.5" class="muted">SSIDs · radios</text></g><g class="p6"><rect x="482" y="174" width="207" height="48" rx="10" fill="#111a27" stroke="#243247"/>
+  <text x="498" y="196" font-size="13" font-weight="800" style="fill:#7cc4ff">Zones</text>
+  <text x="498" y="213" font-size="9.5" class="muted">firewall zones</text></g><g class="p7"><rect x="703" y="174" width="207" height="48" rx="10" fill="#111a27" stroke="#243247"/>
+  <text x="719" y="196" font-size="13" font-weight="800" style="fill:#7cc4ff">Security</text>
+  <text x="719" y="213" font-size="9.5" class="muted">alarms · threats</text></g><g class="p8"><rect x="40" y="232" width="207" height="48" rx="10" fill="#111a27" stroke="#243247"/>
+  <text x="56" y="254" font-size="13" font-weight="800" style="fill:#7cc4ff">Gateway</text>
+  <text x="56" y="271" font-size="9.5" class="muted">WAN · ISP metrics</text></g><g class="p9"><rect x="261" y="232" width="207" height="48" rx="10" fill="#111a27" stroke="#243247"/>
+  <text x="277" y="254" font-size="13" font-weight="800" style="fill:#7cc4ff">Terminal</text>
+  <text x="277" y="271" font-size="9.5" class="muted">raw API console</text></g><g class="p10"><rect x="482" y="232" width="207" height="48" rx="10" fill="#111a27" stroke="#243247"/>
+  <text x="498" y="254" font-size="13" font-weight="800" style="fill:#7cc4ff">Chat</text>
+  <text x="498" y="271" font-size="9.5" class="muted">ask your network</text></g><g class="p11"><rect x="703" y="232" width="207" height="48" rx="10" fill="#111a27" stroke="#243247"/>
+  <text x="719" y="254" font-size="13" font-weight="800" style="fill:#7cc4ff">Settings</text>
+  <text x="719" y="271" font-size="9.5" class="muted">app + auth</text></g>
+  <g class="be"><rect x="40" y="306" width="880" height="54" rx="11" fill="#0e1622" stroke="#2a3a52"/>
+  <text x="60" y="330" font-size="12" font-weight="700" style="fill:#7cc4ff">Base44 backend</text>
+  <text x="60" y="349" font-size="10.5" class="muted">Deno serverless functions</text>
+  <text x="300" y="330" font-size="11.5" class="mono">unifiProxy</text><text x="300" y="349" font-size="10" class="muted">admin-gated proxy → api.ui.com</text>
+  <text x="620" y="330" font-size="11.5" class="mono">unifiChat</text><text x="620" y="349" font-size="10" class="muted">the AI assistant over your live data</text></g>
+</svg>
